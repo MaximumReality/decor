@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>Boho Collage</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
   :root {
     --wall-color: #4a5d6a;
@@ -15,8 +16,8 @@
     --accent: #8ec5d6;
     --text: #d4c9bc;
     --text-muted: #7a8a94;
-    --delete-bg: rgba(180, 60, 60, 0.85);
-    --delete-hover: rgba(210, 80, 80, 0.95);
+    --delete-bg: rgba(180,60,60,0.85);
+    --delete-hover: rgba(210,80,80,0.95);
     --sidebar-width: 220px;
   }
 
@@ -26,21 +27,15 @@
     font-family: 'Georgia', serif;
     background: #0f1418;
     overflow: hidden;
-    height: 100vh;
-    width: 100vw;
+    height: 100vh; width: 100vw;
   }
 
-  /* ── Sidebar ─────────────────────────────────── */
+  /* ── Sidebar ──────────────────────────────────── */
   #sidebar {
-    position: fixed;
-    top: 0; left: 0;
-    width: var(--sidebar-width);
-    height: 100%;
-    background: var(--sidebar-bg);
-    color: var(--text);
-    z-index: 999;
-    display: flex;
-    flex-direction: column;
+    position: fixed; top: 0; left: 0;
+    width: var(--sidebar-width); height: 100%;
+    background: var(--sidebar-bg); color: var(--text);
+    z-index: 999; display: flex; flex-direction: column;
     transition: transform 0.3s ease;
     box-shadow: 4px 0 20px rgba(0,0,0,0.5);
   }
@@ -53,105 +48,73 @@
     flex-shrink: 0;
   }
   #sidebar-header h2 {
-    font-size: 16px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--accent);
+    font-size: 16px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--accent);
     margin-bottom: 10px;
   }
-
   #color-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 1px;
   }
   #wallPicker {
-    width: 32px; height: 24px;
-    border: none; border-radius: 4px;
-    cursor: pointer; background: none;
-    padding: 0;
+    width: 32px; height: 24px; border: none;
+    border-radius: 4px; cursor: pointer; padding: 0; background: none;
   }
 
   #sidebar-body {
-    overflow-y: auto;
-    flex: 1;
+    overflow-y: auto; flex: 1;
     padding: 10px 12px 20px;
-    scrollbar-width: thin;
-    scrollbar-color: #2e3d48 transparent;
+    scrollbar-width: thin; scrollbar-color: #2e3d48 transparent;
   }
   #sidebar-body::-webkit-scrollbar { width: 4px; }
   #sidebar-body::-webkit-scrollbar-thumb { background: #2e3d48; border-radius: 4px; }
-
   #sidebar-body h3 {
-    font-size: 10px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin: 16px 0 6px;
-    padding-bottom: 4px;
+    font-size: 10px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--text-muted);
+    margin: 16px 0 6px; padding-bottom: 4px;
     border-bottom: 1px solid rgba(255,255,255,0.05);
   }
 
   .spawn-btn {
-    display: block;
-    width: 100%;
-    margin: 4px 0;
-    padding: 7px 10px;
-    background: var(--btn-bg);
-    color: var(--text);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 4px;
-    font-size: 12px;
-    text-align: left;
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
+    display: block; width: 100%; margin: 4px 0;
+    padding: 7px 10px; background: var(--btn-bg);
+    color: var(--text); border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px; font-size: 12px; text-align: left;
+    cursor: pointer; transition: background 0.15s, border-color 0.15s;
   }
-  .spawn-btn:hover {
-    background: var(--btn-hover);
-    border-color: rgba(142,197,214,0.3);
-  }
+  .spawn-btn:hover { background: var(--btn-hover); border-color: rgba(142,197,214,0.3); }
 
-  /* ── Toggle Button ───────────────────────────── */
-  #toggleSidebar {
-    position: fixed;
-    top: 10px; left: 10px;
-    z-index: 1000;
-    width: 38px; height: 38px;
+  /* ── Fixed UI Buttons ─────────────────────────── */
+  .ui-btn {
+    position: fixed; z-index: 1000;
     background: var(--sidebar-header);
     color: var(--accent);
     border: 1px solid rgba(142,197,214,0.25);
-    border-radius: 6px;
-    font-size: 18px;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
+    border-radius: 6px; cursor: pointer;
+    font-size: 12px; font-family: 'Georgia', serif;
+    padding: 6px 10px; text-decoration: none;
+    display: inline-flex; align-items: center; justify-content: center;
     transition: background 0.15s;
+    opacity: 0; animation: fadeIn 1s ease 0.3s forwards;
   }
-  #toggleSidebar:hover { background: #222c34; }
+  .ui-btn:hover { background: #222c34; }
+  @keyframes fadeIn { to { opacity: 1; } }
 
-  /* ── Room ────────────────────────────────────── */
+  #toggleSidebar { top: 10px; left: 10px; width: 38px; height: 38px; font-size: 18px; opacity: 1; animation: none; }
+  #musicBtn      { top: 10px; right: 10px; width: 38px; height: 38px; font-size: 16px; }
+  #saveBtn       { bottom: 10px; right: 10px; }
+  #homeBtn       { bottom: 10px; left: 10px; }
+  #gamesBtn      { bottom: 10px; left: 100px; }
+
+  /* ── Room ─────────────────────────────────────── */
   .room { position: relative; width: 100vw; height: 100vh; }
+  .wall { height: 70%; background: var(--wall-color); position: relative; transition: background 0.3s; }
+  .floor { width: 100%; height: 30%; background: var(--floor-color); }
 
-  .wall {
-    height: 70%;
-    background: var(--wall-color);
-    position: relative;
-    transition: background 0.3s;
-  }
-
-  .floor {
-    width: 100%;
-    height: 30%;
-    background: var(--floor-color);
-  }
-
-  /* ── Items Layer ─────────────────────────────── */
+  /* ── Items Layer ──────────────────────────────── */
   #items { position: absolute; inset: 0; pointer-events: none; }
 
-  /* ── Item Base ───────────────────────────────── */
   .item {
     position: absolute;
     background-size: contain;
@@ -163,57 +126,49 @@
     touch-action: none;
     overflow: visible;
     filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.45));
+    transform-origin: center center;
   }
   .item:active { cursor: grabbing; }
 
-  /* Delete button on each item */
+  /* ── Item Controls (hidden until selected) ─────── */
   .item .delete-btn {
-    position: absolute;
-    top: -10px; right: -10px;
+    position: absolute; top: -10px; right: -10px;
     width: 22px; height: 22px;
-    background: var(--delete-bg);
-    color: #fff;
-    border: 2px solid rgba(255,255,255,0.4);
-    border-radius: 50%;
-    font-size: 14px;
-    line-height: 18px;
-    text-align: center;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.15s;
-    z-index: 20;
-    pointer-events: none;
-    padding: 0;
+    background: var(--delete-bg); color: #fff;
+    border: 2px solid rgba(255,255,255,0.4); border-radius: 50%;
+    font-size: 14px; line-height: 18px; text-align: center;
+    cursor: pointer; opacity: 0; transition: opacity 0.15s;
+    z-index: 20; pointer-events: none; padding: 0;
   }
-
-  /* Resize handle — bottom-right corner */
   .item .resize-handle {
-    position: absolute;
-    bottom: -10px; right: -10px;
+    position: absolute; bottom: -10px; right: -10px;
     width: 20px; height: 20px;
     background: var(--accent);
-    border: 2px solid rgba(255,255,255,0.5);
-    border-radius: 50%;
-    cursor: se-resize;
-    opacity: 0;
-    transition: opacity 0.15s;
-    z-index: 20;
-    pointer-events: none;
-    touch-action: none;
+    border: 2px solid rgba(255,255,255,0.5); border-radius: 50%;
+    cursor: se-resize; opacity: 0; transition: opacity 0.15s;
+    z-index: 20; pointer-events: none; touch-action: none;
+  }
+  .item .rotate-handle {
+    position: absolute; top: -14px; left: 50%;
+    transform: translateX(-50%);
+    width: 20px; height: 20px;
+    background: #ffd166;
+    border: 2px solid rgba(255,255,255,0.6); border-radius: 50%;
+    cursor: grab; opacity: 0; transition: opacity 0.15s;
+    z-index: 20; pointer-events: none; touch-action: none;
+    font-size: 10px; display: flex; align-items: center; justify-content: center;
   }
 
-  /* Show handles only when item is selected */
-  .item.selected {
-    outline: 1px dashed rgba(142,197,214,0.4);
-    outline-offset: 4px;
-  }
-  .item.selected .delete-btn  { opacity: 1; pointer-events: all; }
-  .item.selected .resize-handle { opacity: 0.9; pointer-events: all; }
-  .item.selected .delete-btn:hover  { background: var(--delete-hover); }
-  .item.selected .resize-handle:hover { opacity: 1; }
+  /* Show all handles when selected */
+  .item.selected { outline: 1px dashed rgba(142,197,214,0.4); outline-offset: 4px; }
+  .item.selected .delete-btn   { opacity: 1;   pointer-events: all; }
+  .item.selected .resize-handle{ opacity: 0.9; pointer-events: all; }
+  .item.selected .rotate-handle{ opacity: 0.9; pointer-events: all; }
+  .item.selected .delete-btn:hover   { background: var(--delete-hover); }
+  .item.selected .resize-handle:hover{ opacity: 1; }
+  .item.selected .rotate-handle:hover{ opacity: 1; }
 
-  /* ── Sprite Classes ──────────────────────────── */
-  /* Couches & Chairs */
+  /* ── Sprite Classes ───────────────────────────── */
   .green-couch            { background-image: url('sprites/green-couch.png');             width:120px; height:120px; }
   .dark-purple-couch      { background-image: url('sprites/dark-purple-couch.png');       width:120px; height:120px; }
   .pink-couch             { background-image: url('sprites/pink-couch.png');              width:120px; height:120px; }
@@ -221,20 +176,16 @@
   .red-couch              { background-image: url('sprites/red-couch.png');               width:120px; height:120px; }
   .purple-wingback-chair  { background-image: url('sprites/purple-wingback-chair.png');   width:100px; height:110px; }
   .yellow-chair           { background-image: url('sprites/yellow-chair.png');            width:100px; height:110px; }
-  /* Pillows / poufs */
   .floor-pillow           { background-image: url('sprites/floor-pillow.png');            width:60px;  height:60px;  }
   .floor-pillows          { background-image: url('sprites/floor-pillows.png');           width:80px;  height:80px;  }
   .purple-floor-pillows   { background-image: url('sprites/purple-floor-pillows.png');    width:80px;  height:80px;  }
   .pouf-stack-pillows     { background-image: url('sprites/pouf-stack-pillows.png');      width:90px;  height:90px;  }
-  /* Blankets */
   .stool-blanket-stack    { background-image: url('sprites/stool-blanket-stack.png');     width:80px;  height:80px;  }
   .basket-blanket-stack   { background-image: url('sprites/basket-blanket-stack.png');    width:80px;  height:80px;  }
   .stacked-blankets       { background-image: url('sprites/stacked-blankets.png');        width:80px;  height:80px;  }
-  /* Plants */
   .potted-plant           { background-image: url('sprites/potted-plant.png');            width:80px;  height:80px;  }
   .pink-potted-plant      { background-image: url('sprites/pink-potted-plant.png');       width:80px;  height:80px;  }
   .purple-plant-stand     { background-image: url('sprites/purple-plant-stand.png');      width:80px;  height:80px;  }
-  /* Wall art */
   .lake-art               { background-image: url('sprites/lake-art.png');                width:100px; height:100px; }
   .macrame-art            { background-image: url('sprites/macrame-art.png');             width:100px; height:100px; }
   .meadow-art             { background-image: url('sprites/meadow-art.png');              width:100px; height:100px; }
@@ -243,9 +194,7 @@
   .tapestry-art           { background-image: url('sprites/tapestry-art.png');            width:100px; height:100px; }
   .horizontal-tapestry-art{ background-image: url('sprites/horizontal-tapestry-art.png'); width:130px; height:80px;  }
   .wall-shelf-art         { background-image: url('sprites/wall-shelf-art.png');          width:100px; height:100px; }
-  /* Lighting */
   .ceiling-light          { background-image: url('sprites/ceiling-light.png');           width:100px; height:100px; }
-  /* Shelves / misc */
   .wood-floor-shelves     { background-image: url('sprites/wood-floor-shelves.png');      width:120px; height:100px; }
   .blue-curio             { background-image: url('sprites/blue-curio.png');              width:80px;  height:100px; }
   .light-purple-curio     { background-image: url('sprites/light-purple-curio.png');      width:80px;  height:100px; }
@@ -257,7 +206,19 @@
 </head>
 <body>
 
-<button id="toggleSidebar">☰</button>
+<!-- Sidebar toggle -->
+<button id="toggleSidebar" class="ui-btn">☰</button>
+
+<!-- Top-right: music -->
+<button id="musicBtn" class="ui-btn" title="Toggle music">🎶</button>
+
+<!-- Bottom nav -->
+<a id="homeBtn"  class="ui-btn" href="https://maximumreality.xyz">🏙️ Home</a>
+<a id="gamesBtn" class="ui-btn" href="https://maximumreality.github.io/game/">🕹️ Games</a>
+<button id="saveBtn" class="ui-btn">📸 Save PNG</button>
+
+<!-- Audio -->
+<audio id="bgMusic" src="audio/boho-bg.mp3" loop></audio>
 
 <aside id="sidebar">
   <div id="sidebar-header">
@@ -269,6 +230,11 @@
   </div>
 
   <div id="sidebar-body">
+    <h3>Room</h3>
+    <button class="spawn-btn" onclick="saveRoom()">💾 Save Room</button>
+    <button class="spawn-btn" onclick="loadRoom()">📂 Load Room</button>
+    <button class="spawn-btn" onclick="clearRoom()">🧹 Clear All</button>
+
     <h3>Couches & Chairs</h3>
     <button class="spawn-btn" data-type="green-couch"           data-zone="floor">Green Couch</button>
     <button class="spawn-btn" data-type="dark-purple-couch"     data-zone="floor">Dark Purple Couch</button>
@@ -279,44 +245,44 @@
     <button class="spawn-btn" data-type="yellow-chair"          data-zone="floor">Yellow Chair</button>
 
     <h3>Pillows & Poufs</h3>
-    <button class="spawn-btn" data-type="floor-pillow"          data-zone="floor">Floor Pillow</button>
-    <button class="spawn-btn" data-type="floor-pillows"         data-zone="floor">Floor Pillows</button>
-    <button class="spawn-btn" data-type="purple-floor-pillows"  data-zone="floor">Purple Pillows</button>
-    <button class="spawn-btn" data-type="pouf-stack-pillows"    data-zone="floor">Pouf Stack</button>
+    <button class="spawn-btn" data-type="floor-pillow"         data-zone="floor">Floor Pillow</button>
+    <button class="spawn-btn" data-type="floor-pillows"        data-zone="floor">Floor Pillows</button>
+    <button class="spawn-btn" data-type="purple-floor-pillows" data-zone="floor">Purple Pillows</button>
+    <button class="spawn-btn" data-type="pouf-stack-pillows"   data-zone="floor">Pouf Stack</button>
 
     <h3>Blankets</h3>
-    <button class="spawn-btn" data-type="stool-blanket-stack"   data-zone="floor">Stool Stack</button>
-    <button class="spawn-btn" data-type="basket-blanket-stack"  data-zone="floor">Basket Stack</button>
-    <button class="spawn-btn" data-type="stacked-blankets"      data-zone="floor">Stacked Blankets</button>
+    <button class="spawn-btn" data-type="stool-blanket-stack"  data-zone="floor">Stool Stack</button>
+    <button class="spawn-btn" data-type="basket-blanket-stack" data-zone="floor">Basket Stack</button>
+    <button class="spawn-btn" data-type="stacked-blankets"     data-zone="floor">Stacked Blankets</button>
 
     <h3>Plants</h3>
-    <button class="spawn-btn" data-type="potted-plant"          data-zone="floor">Plant</button>
-    <button class="spawn-btn" data-type="pink-potted-plant"     data-zone="floor">Pink Plant</button>
-    <button class="spawn-btn" data-type="purple-plant-stand"    data-zone="floor">Plant Stand</button>
+    <button class="spawn-btn" data-type="potted-plant"       data-zone="floor">Plant</button>
+    <button class="spawn-btn" data-type="pink-potted-plant"  data-zone="floor">Pink Plant</button>
+    <button class="spawn-btn" data-type="purple-plant-stand" data-zone="floor">Plant Stand</button>
 
     <h3>Wall Art</h3>
-    <button class="spawn-btn" data-type="lake-art"                   data-zone="wall">Lake Art</button>
-    <button class="spawn-btn" data-type="macrame-art"                data-zone="wall">Macramé</button>
-    <button class="spawn-btn" data-type="meadow-art"                 data-zone="wall">Meadow</button>
-    <button class="spawn-btn" data-type="mirror-art"                 data-zone="wall">Mirror</button>
-    <button class="spawn-btn" data-type="mountain-art"               data-zone="wall">Mountain</button>
-    <button class="spawn-btn" data-type="tapestry-art"               data-zone="wall">Tapestry</button>
-    <button class="spawn-btn" data-type="horizontal-tapestry-art"    data-zone="wall">Horiz. Tapestry</button>
-    <button class="spawn-btn" data-type="wall-shelf-art"             data-zone="wall">Wall Shelf</button>
+    <button class="spawn-btn" data-type="lake-art"                  data-zone="wall">Lake Art</button>
+    <button class="spawn-btn" data-type="macrame-art"               data-zone="wall">Macramé</button>
+    <button class="spawn-btn" data-type="meadow-art"                data-zone="wall">Meadow</button>
+    <button class="spawn-btn" data-type="mirror-art"                data-zone="wall">Mirror</button>
+    <button class="spawn-btn" data-type="mountain-art"              data-zone="wall">Mountain</button>
+    <button class="spawn-btn" data-type="tapestry-art"              data-zone="wall">Tapestry</button>
+    <button class="spawn-btn" data-type="horizontal-tapestry-art"   data-zone="wall">Horiz. Tapestry</button>
+    <button class="spawn-btn" data-type="wall-shelf-art"            data-zone="wall">Wall Shelf</button>
 
     <h3>Lighting</h3>
-    <button class="spawn-btn" data-type="ceiling-light"         data-zone="ceiling">Ceiling Light</button>
+    <button class="spawn-btn" data-type="ceiling-light" data-zone="ceiling">Ceiling Light</button>
 
     <h3>Shelves & Storage</h3>
-    <button class="spawn-btn" data-type="wood-floor-shelves"    data-zone="floor">Wood Shelves</button>
-    <button class="spawn-btn" data-type="blue-curio"            data-zone="floor">Blue Curio</button>
-    <button class="spawn-btn" data-type="light-purple-curio"    data-zone="floor">Light Purple Curio</button>
-    <button class="spawn-btn" data-type="pink-curio"            data-zone="floor">Pink Curio</button>
+    <button class="spawn-btn" data-type="wood-floor-shelves"  data-zone="floor">Wood Shelves</button>
+    <button class="spawn-btn" data-type="blue-curio"          data-zone="floor">Blue Curio</button>
+    <button class="spawn-btn" data-type="light-purple-curio"  data-zone="floor">Light Purple Curio</button>
+    <button class="spawn-btn" data-type="pink-curio"          data-zone="floor">Pink Curio</button>
 
     <h3>Rugs & Accents</h3>
-    <button class="spawn-btn" data-type="purple-rug"            data-zone="floor">Purple Rug</button>
-    <button class="spawn-btn" data-type="vertical-rug"          data-zone="floor">Vertical Rug</button>
-    <button class="spawn-btn" data-type="amethyst-wand"         data-zone="floor">Amethyst Wand</button>
+    <button class="spawn-btn" data-type="purple-rug"    data-zone="floor">Purple Rug</button>
+    <button class="spawn-btn" data-type="vertical-rug"  data-zone="floor">Vertical Rug</button>
+    <button class="spawn-btn" data-type="amethyst-wand" data-zone="floor">Amethyst Wand</button>
   </div>
 </aside>
 
@@ -335,18 +301,20 @@ const picker   = document.getElementById('wallPicker');
 const itemsEl  = document.getElementById('items');
 const ZONE_TOP = { floor: '65%', wall: '20%', ceiling: '5%' };
 
+// ── Sidebar ────────────────────────────────────────
 toggle.addEventListener('click', () => sidebar.classList.toggle('closed'));
 picker.addEventListener('input', e => wall.style.background = e.target.value);
 
-document.querySelectorAll('.spawn-btn').forEach(btn => {
+// ── Spawn buttons ──────────────────────────────────
+document.querySelectorAll('.spawn-btn[data-type]').forEach(btn => {
   btn.addEventListener('click', () => spawnItem(btn.dataset.type, btn.dataset.zone));
 });
 
-// Tap the room background to deselect all
+// ── Deselect on room background tap ───────────────
 document.querySelector('.room').addEventListener('pointerdown', e => {
-  if (e.target === e.currentTarget ||
-      e.target.classList.contains('wall') ||
-      e.target.classList.contains('floor')) {
+  if (e.target.classList.contains('wall') ||
+      e.target.classList.contains('floor') ||
+      e.target.classList.contains('room')) {
     deselectAll();
   }
 });
@@ -354,60 +322,74 @@ document.querySelector('.room').addEventListener('pointerdown', e => {
 function deselectAll() {
   document.querySelectorAll('.item.selected').forEach(el => el.classList.remove('selected'));
 }
-
 function selectItem(el) {
   deselectAll();
   el.classList.add('selected');
 }
-
 function bringToFront(el) {
   el.style.zIndex = ++zTop;
 }
 
-function spawnItem(type, zone) {
+// ── Spawn ──────────────────────────────────────────
+function spawnItem(type, zone, opts = {}) {
   const el = document.createElement('div');
   el.classList.add('item', type);
-  el.style.top  = ZONE_TOP[zone] || '50%';
-  el.style.left = '140px';
+  el.style.top  = opts.top  || ZONE_TOP[zone] || '50%';
+  el.style.left = opts.left || '140px';
+  if (opts.width)  el.style.width  = opts.width;
+  if (opts.height) el.style.height = opts.height;
+  if (opts.rotation) {
+    el.style.transform = `rotate(${opts.rotation}deg)`;
+    el.dataset.rotation = opts.rotation;
+  } else {
+    el.dataset.rotation = 0;
+  }
   bringToFront(el);
 
-  // Delete button
+  // Delete
   const del = document.createElement('button');
-  del.className   = 'delete-btn';
+  del.className = 'delete-btn';
   del.textContent = '×';
-  del.title       = 'Remove';
-  del.addEventListener('pointerdown', e => { e.stopPropagation(); });
+  del.title = 'Remove';
+  del.addEventListener('pointerdown', e => e.stopPropagation());
   del.addEventListener('click', e => { e.stopPropagation(); el.remove(); });
   el.appendChild(del);
 
-  // Resize handle
-  const handle = document.createElement('div');
-  handle.className = 'resize-handle';
-  handle.title = 'Drag to resize';
-  el.appendChild(handle);
+  // Resize
+  const resizeHandle = document.createElement('div');
+  resizeHandle.className = 'resize-handle';
+  resizeHandle.title = 'Drag to resize';
+  el.appendChild(resizeHandle);
+
+  // Rotate
+  const rotateHandle = document.createElement('div');
+  rotateHandle.className = 'rotate-handle';
+  rotateHandle.title = 'Drag to rotate';
+  rotateHandle.textContent = '↻';
+  el.appendChild(rotateHandle);
 
   itemsEl.appendChild(el);
   makeDraggable(el);
-  makeResizable(el, handle);
+  makeResizable(el, resizeHandle);
+  makeRotatable(el, rotateHandle);
 
-  // Select on spawn
   selectItem(el);
+  return el;
 }
 
+// ── Drag ───────────────────────────────────────────
 function makeDraggable(el) {
   let startX, startY, startLeft, startTop;
   let dragging = false, moved = false;
 
   el.addEventListener('pointerdown', e => {
     if (e.target.classList.contains('delete-btn') ||
-        e.target.classList.contains('resize-handle')) return;
-    dragging = true;
-    moved    = false;
-    startX   = e.clientX;
-    startY   = e.clientY;
+        e.target.classList.contains('resize-handle') ||
+        e.target.classList.contains('rotate-handle')) return;
+    dragging = true; moved = false;
+    startX = e.clientX; startY = e.clientY;
     const rect = el.getBoundingClientRect();
-    startLeft  = rect.left;
-    startTop   = rect.top;
+    startLeft = rect.left; startTop = rect.top;
     el.style.left = startLeft + 'px';
     el.style.top  = startTop  + 'px';
     el.setPointerCapture(e.pointerId);
@@ -417,48 +399,173 @@ function makeDraggable(el) {
 
   el.addEventListener('pointermove', e => {
     if (!dragging) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
+    const dx = e.clientX - startX, dy = e.clientY - startY;
     if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
     el.style.left = (startLeft + dx) + 'px';
     el.style.top  = (startTop  + dy) + 'px';
   });
 
-  el.addEventListener('pointerup', e => {
+  el.addEventListener('pointerup', () => {
     if (!moved) {
-      // It was a tap — toggle selection
-      if (el.classList.contains('selected')) {
-        el.classList.remove('selected');
-      } else {
-        selectItem(el);
-      }
+      el.classList.contains('selected') ? el.classList.remove('selected') : selectItem(el);
     }
     dragging = false;
   });
 }
 
+// ── Resize ─────────────────────────────────────────
 function makeResizable(el, handle) {
   handle.addEventListener('pointerdown', e => {
-    e.stopPropagation();
-    e.preventDefault();
+    e.stopPropagation(); e.preventDefault();
     handle.setPointerCapture(e.pointerId);
     bringToFront(el);
-
     const startX = e.clientX, startY = e.clientY;
     const startW = el.offsetWidth, startH = el.offsetHeight;
 
     handle.addEventListener('pointermove', onMove);
-    handle.addEventListener('pointerup',   onUp);
-
+    handle.addEventListener('pointerup', onUp);
     function onMove(ev) {
       el.style.width  = Math.max(30, startW + ev.clientX - startX) + 'px';
       el.style.height = Math.max(30, startH + ev.clientY - startY) + 'px';
     }
     function onUp() {
       handle.removeEventListener('pointermove', onMove);
-      handle.removeEventListener('pointerup',   onUp);
+      handle.removeEventListener('pointerup', onUp);
     }
   });
+}
+
+// ── Rotate ─────────────────────────────────────────
+function makeRotatable(el, handle) {
+  handle.addEventListener('pointerdown', e => {
+    e.stopPropagation(); e.preventDefault();
+    handle.setPointerCapture(e.pointerId);
+    bringToFront(el);
+
+    handle.addEventListener('pointermove', onMove);
+    handle.addEventListener('pointerup', onUp);
+
+    function onMove(ev) {
+      const rect = el.getBoundingClientRect();
+      const cx = rect.left + rect.width  / 2;
+      const cy = rect.top  + rect.height / 2;
+      const angle = Math.atan2(ev.clientY - cy, ev.clientX - cx) * (180 / Math.PI) + 90;
+      el.style.transform = `rotate(${angle}deg)`;
+      el.dataset.rotation = angle;
+    }
+    function onUp() {
+      handle.removeEventListener('pointermove', onMove);
+      handle.removeEventListener('pointerup', onUp);
+    }
+  });
+}
+
+// ── Music ──────────────────────────────────────────
+const music    = document.getElementById('bgMusic');
+const musicBtn = document.getElementById('musicBtn');
+let playing = false;
+music.volume = 0;
+
+function fadeIn() {
+  let v = 0;
+  const t = setInterval(() => {
+    v = Math.min(v + 0.02, 0.35);
+    music.volume = v;
+    if (v >= 0.35) clearInterval(t);
+  }, 80);
+}
+
+// First interaction starts music
+document.body.addEventListener('pointerdown', () => {
+  if (!playing) {
+    music.play().then(() => { playing = true; musicBtn.textContent = '🔊'; fadeIn(); }).catch(() => {});
+  }
+}, { once: true });
+
+musicBtn.addEventListener('click', () => {
+  if (playing) {
+    music.pause(); playing = false; musicBtn.textContent = '🎶';
+  } else {
+    music.play(); playing = true; musicBtn.textContent = '🔊'; fadeIn();
+  }
+});
+
+// ── Screenshot ─────────────────────────────────────
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  deselectAll();
+  const uiToHide = ['sidebar', 'toggleSidebar', 'musicBtn', 'saveBtn', 'homeBtn', 'gamesBtn'];
+  uiToHide.forEach(id => document.getElementById(id).style.visibility = 'hidden');
+
+  // Flash
+  const flash = document.createElement('div');
+  Object.assign(flash.style, { position:'fixed', inset:'0', background:'white', opacity:'0.7', zIndex:'9999', pointerEvents:'none' });
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 120);
+
+  const canvas = await html2canvas(document.querySelector('.room'), { backgroundColor: '#0f1418', useCORS: true });
+  uiToHide.forEach(id => document.getElementById(id).style.visibility = '');
+
+  const link = document.createElement('a');
+  link.download = 'boho-collage.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+});
+
+// ── Save / Load / Clear ────────────────────────────
+function getItemType(el) {
+  return [...el.classList].find(c => c !== 'item' && c !== 'selected');
+}
+
+function saveRoom() {
+  const wallColor = wall.style.background || getComputedStyle(wall).background;
+  const data = {
+    wallColor,
+    items: []
+  };
+  document.querySelectorAll('.item').forEach(el => {
+    data.items.push({
+      type:     getItemType(el),
+      left:     el.style.left,
+      top:      el.style.top,
+      width:    el.style.width  || '',
+      height:   el.style.height || '',
+      rotation: el.dataset.rotation || 0,
+      zIndex:   el.style.zIndex || 10
+    });
+  });
+  localStorage.setItem('bohoCollage', JSON.stringify(data));
+  // Brief visual confirmation instead of alert
+  const btn = event.target;
+  const orig = btn.textContent;
+  btn.textContent = '✅ Saved!';
+  setTimeout(() => btn.textContent = orig, 1500);
+}
+
+function loadRoom() {
+  const raw = localStorage.getItem('bohoCollage');
+  if (!raw) { alert('No saved room found.'); return; }
+  const data = JSON.parse(raw);
+  itemsEl.innerHTML = '';
+  if (data.wallColor) wall.style.background = data.wallColor;
+  data.items.forEach(obj => {
+    spawnItem(obj.type, 'floor', {
+      top:      obj.top,
+      left:     obj.left,
+      width:    obj.width,
+      height:   obj.height,
+      rotation: parseFloat(obj.rotation) || 0
+    });
+    // Restore z-index
+    const spawned = itemsEl.lastElementChild;
+    if (spawned) spawned.style.zIndex = obj.zIndex;
+  });
+  deselectAll();
+}
+
+function clearRoom() {
+  if (confirm('Clear the room? This cannot be undone.')) {
+    itemsEl.innerHTML = '';
+  }
 }
 </script>
 </body>

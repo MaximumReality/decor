@@ -178,14 +178,12 @@
     line-height: 18px;
     text-align: center;
     cursor: pointer;
-    opacity: 0.7;
+    opacity: 0;
     transition: opacity 0.15s;
     z-index: 20;
-    pointer-events: all;
+    pointer-events: none;
     padding: 0;
   }
-  .item:hover .delete-btn { opacity: 1; }
-  .item .delete-btn:hover { background: var(--delete-hover); }
 
   /* Resize handle — bottom-right corner */
   .item .resize-handle {
@@ -196,14 +194,22 @@
     border: 2px solid rgba(255,255,255,0.5);
     border-radius: 50%;
     cursor: se-resize;
-    opacity: 0.7;
+    opacity: 0;
     transition: opacity 0.15s;
     z-index: 20;
-    pointer-events: all;
+    pointer-events: none;
     touch-action: none;
   }
-  .item:hover .resize-handle { opacity: 1; }
-  .item .resize-handle:hover { opacity: 1; }
+
+  /* Show handles only when item is selected */
+  .item.selected {
+    outline: 1px dashed rgba(142,197,214,0.4);
+    outline-offset: 4px;
+  }
+  .item.selected .delete-btn  { opacity: 1; pointer-events: all; }
+  .item.selected .resize-handle { opacity: 0.9; pointer-events: all; }
+  .item.selected .delete-btn:hover  { background: var(--delete-hover); }
+  .item.selected .resize-handle:hover { opacity: 1; }
 
   /* ── Sprite Classes ──────────────────────────── */
   /* Couches & Chairs */
@@ -335,6 +341,24 @@ document.querySelectorAll('.spawn-btn').forEach(btn => {
   btn.addEventListener('click', () => spawnItem(btn.dataset.type, btn.dataset.zone));
 });
 
+// Tap the room background to deselect all
+document.querySelector('.room').addEventListener('pointerdown', e => {
+  if (e.target === e.currentTarget ||
+      e.target.classList.contains('wall') ||
+      e.target.classList.contains('floor')) {
+    deselectAll();
+  }
+});
+
+function deselectAll() {
+  document.querySelectorAll('.item.selected').forEach(el => el.classList.remove('selected'));
+}
+
+function selectItem(el) {
+  deselectAll();
+  el.classList.add('selected');
+}
+
 function bringToFront(el) {
   el.style.zIndex = ++zTop;
 }
@@ -346,16 +370,16 @@ function spawnItem(type, zone) {
   el.style.left = '140px';
   bringToFront(el);
 
-  // Delete button (top-left, red)
+  // Delete button
   const del = document.createElement('button');
   del.className   = 'delete-btn';
   del.textContent = '×';
   del.title       = 'Remove';
-  del.addEventListener('pointerdown', e => { e.stopPropagation(); bringToFront(el); });
+  del.addEventListener('pointerdown', e => { e.stopPropagation(); });
   del.addEventListener('click', e => { e.stopPropagation(); el.remove(); });
   el.appendChild(del);
 
-  // Resize handle (bottom-right, teal)
+  // Resize handle
   const handle = document.createElement('div');
   handle.className = 'resize-handle';
   handle.title = 'Drag to resize';
@@ -364,20 +388,25 @@ function spawnItem(type, zone) {
   itemsEl.appendChild(el);
   makeDraggable(el);
   makeResizable(el, handle);
+
+  // Select on spawn
+  selectItem(el);
 }
 
 function makeDraggable(el) {
-  let startX, startY, startLeft, startTop, dragging = false;
+  let startX, startY, startLeft, startTop;
+  let dragging = false, moved = false;
 
   el.addEventListener('pointerdown', e => {
     if (e.target.classList.contains('delete-btn') ||
         e.target.classList.contains('resize-handle')) return;
-    dragging  = true;
-    startX    = e.clientX;
-    startY    = e.clientY;
+    dragging = true;
+    moved    = false;
+    startX   = e.clientX;
+    startY   = e.clientY;
     const rect = el.getBoundingClientRect();
-    startLeft = rect.left;
-    startTop  = rect.top;
+    startLeft  = rect.left;
+    startTop   = rect.top;
     el.style.left = startLeft + 'px';
     el.style.top  = startTop  + 'px';
     el.setPointerCapture(e.pointerId);
@@ -387,11 +416,24 @@ function makeDraggable(el) {
 
   el.addEventListener('pointermove', e => {
     if (!dragging) return;
-    el.style.left = (startLeft + e.clientX - startX) + 'px';
-    el.style.top  = (startTop  + e.clientY - startY) + 'px';
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+    el.style.left = (startLeft + dx) + 'px';
+    el.style.top  = (startTop  + dy) + 'px';
   });
 
-  el.addEventListener('pointerup', () => { dragging = false; });
+  el.addEventListener('pointerup', e => {
+    if (!moved) {
+      // It was a tap — toggle selection
+      if (el.classList.contains('selected')) {
+        el.classList.remove('selected');
+      } else {
+        selectItem(el);
+      }
+    }
+    dragging = false;
+  });
 }
 
 function makeResizable(el, handle) {
@@ -402,7 +444,7 @@ function makeResizable(el, handle) {
     bringToFront(el);
 
     const startX = e.clientX, startY = e.clientY;
-    const startW = el.offsetWidth,  startH = el.offsetHeight;
+    const startW = el.offsetWidth, startH = el.offsetHeight;
 
     handle.addEventListener('pointermove', onMove);
     handle.addEventListener('pointerup',   onUp);

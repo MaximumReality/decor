@@ -134,6 +134,49 @@
     .plant {
       background-image: url('sprites/plant.png');
     }
+    .item {
+  position: absolute;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+/* Default sizes */
+.floor {
+  width: 120px;
+  height: 120px;
+}
+
+.wall-item {
+  width: 100px;
+  height: 100px;
+}
+
+.ceiling {
+  width: 100px;
+  height: 100px;
+}
+
+/* Auto-load images */
+.green-couch { background-image: url('sprites/green-couch.png'); }
+.orange-couch { background-image: url('sprites/orange-couch.png'); }
+.red-couch { background-image: url('sprites/red-couch.png'); }
+.yellow-couch-and-rug { background-image: url('sprites/yellow-couch-and-rug.png'); }
+
+.white-chair { background-image: url('sprites/white-chair.png'); }
+.chair-with-ottoman { background-image: url('sprites/chair-with-ottoman.png'); }
+
+.stacked-pouf { background-image: url('sprites/stacked-pouf.png'); }
+
+.potted-plant { background-image: url('sprites/potted-plant.png'); }
+.snake-potted-plant { background-image: url('sprites/snake-potted-plant.png'); }
+
+.ceiling-light { background-image: url('sprites/ceiling-light.png'); }
+
+.lake-art { background-image: url('sprites/lake-art.png'); }
+.macrame-art { background-image: url('sprites/macrame-art.png'); }
+.meadow-art { background-image: url('sprites/meadow-art.png'); }
+.mirror-art { background-image: url('sprites/mirror-art.png'); }
+.mountain-art { background-image: url('sprites/mountain-art.png'); }
 
   </style>
 </head>
@@ -149,8 +192,21 @@
   <input type="color" id="wallPicker">
 
   <h3>Furniture</h3>
-  <button class="spawn-btn" data-type="sofa">Sofa</button>
-  <button class="spawn-btn" data-type="plant">Plant</button>
+<button class="spawn-btn" data-type="green-couch" data-zone="floor">Green Couch</button>
+<button class="spawn-btn" data-type="white-chair" data-zone="floor">Chair</button>
+<button class="spawn-btn" data-type="stacked-pouf" data-zone="floor">Pouf</button>
+
+<h3>Plants</h3>
+<button class="spawn-btn" data-type="potted-plant" data-zone="floor">Plant</button>
+<button class="spawn-btn" data-type="snake-potted-plant" data-zone="floor">Snake Plant</button>
+
+<h3>Wall Art</h3>
+<button class="spawn-btn" data-type="lake-art" data-zone="wall">Lake</button>
+<button class="spawn-btn" data-type="macrame-art" data-zone="wall">Macramé</button>
+<button class="spawn-btn" data-type="mirror-art" data-zone="wall">Mirror</button>
+
+<h3>Lighting</h3>
+<button class="spawn-btn" data-type="ceiling-light" data-zone="ceiling">Ceiling Light</button>
 </aside>
 
 <div class="room">
@@ -184,20 +240,34 @@
 
   // Spawn items
   document.querySelectorAll('.spawn-btn').forEach(btn => {
-    btn.onclick = () => {
-      const type = btn.dataset.type;
+  btn.onclick = () => {
+    const type = btn.dataset.type;
+    const zone = btn.dataset.zone;
 
-      const el = document.createElement('div');
-      el.className = 'item ' + type;
+    const el = document.createElement('div');
+    el.classList.add('item', type);
 
-      el.style.left = "100px";
-      el.style.top = "100px";
+    if (zone === 'floor') {
+      el.classList.add('floor');
+      el.style.top = "65%";
+    }
 
-      items.appendChild(el);
+    if (zone === 'wall') {
+      el.classList.add('wall-item');
+      el.style.top = "20%";
+    }
 
-      makeDraggable(el);
-    };
-  });
+    if (zone === 'ceiling') {
+      el.classList.add('ceiling');
+      el.style.top = "5%";
+    }
+
+    el.style.left = "120px";
+
+    items.appendChild(el);
+    makeDraggable(el);
+  };
+});
 
   // Basic drag (works on phone too)
   function makeDraggable(el) {

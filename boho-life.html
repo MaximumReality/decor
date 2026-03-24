@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Boho Life Collage - Full Restore</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<style>
+  :root {
+    --wall-color: #4a5d6a; --floor-color: #3d2b1f; --sidebar-bg: #1a1f24;
+    --accent: #8ec5d6; --text: #d4c9bc; --sidebar-width: 220px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Georgia', serif; background: #0f1418; overflow: hidden; height: 100vh; width: 100vw; }
+
+  /* ── Sidebar ── */
+  #sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100%; background: var(--sidebar-bg); color: var(--text); z-index: 999; display: flex; flex-direction: column; transition: transform 0.3s ease; box-shadow: 4px 0 20px rgba(0,0,0,0.5); }
+  #sidebar.closed { transform: translateX(-100%); }
+  #sidebar-header { background: #141820; padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  #sidebar-header h2 { font-size: 16px; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; }
+  #sidebar-body { overflow-y: auto; flex: 1; padding: 10px 12px 20px; }
+  #sidebar-body h3 { font-size: 10px; color: #7a8a94; text-transform: uppercase; margin: 16px 0 6px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .spawn-btn { display: block; width: 100%; margin: 4px 0; padding: 7px 10px; background: #2a3540; color: var(--text); border: 1px solid rgba(255,255,255,0.06); border-radius: 4px; font-size: 12px; cursor: pointer; text-align: left; }
+  .spawn-btn:hover { background: #374b5a; }
+
+  /* ── UI ── */
+  .ui-btn { position: fixed; z-index: 1000; background: #141820; color: var(--accent); border: 1px solid rgba(142,197,214,0.25); border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+  #toggleSidebar { top: 10px; left: 10px; }
+  #musicBtn { top: 10px; right: 10px; }
+  #saveBtn { bottom: 10px; right: 10px; }
+
+  /* ── Room ── */
+  .room { position: relative; width: 100vw; height: 100vh; }
+  .wall { height: 70%; background: var(--wall-color); }
+  .floor { height: 30%; background: var(--floor-color); }
+  #items { position: absolute; inset: 0; pointer-events: none; }
+
+  /* ── Items ── */
+  .item { position: absolute; background-size: contain; background-repeat: no-repeat; cursor: grab; pointer-events: all; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.45)); z-index: 10; }
+  .item.selected { outline: 1px dashed var(--accent); outline-offset: 4px; }
+  .delete-btn { position: absolute; top: -10px; right: -10px; width: 22px; height: 22px; background: rgba(180,60,60,0.85); color: white; border-radius: 50%; opacity: 0; pointer-events: none; border: none; }
+  .item.selected .delete-btn { opacity: 1; pointer-events: all; }
+
+  /* ── Sprites (FULL LIST RESTORED) ── */
+  .green-couch { background-image: url('sprites/green-couch.png'); width:120px; height:120px; }
+  .dark-purple-couch { background-image: url('sprites/dark-purple-couch.png'); width:120px; height:120px; }
+  .pink-couch { background-image: url('sprites/pink-couch.png'); width:120px; height:120px; }
+  .purple-couch { background-image: url('sprites/purple-couch.png'); width:120px; height:120px; }
+  .red-couch { background-image: url('sprites/red-couch.png'); width:120px; height:120px; }
+  .purple-wingback-chair { background-image: url('sprites/purple-wingback-chair.png'); width:100px; height:110px; }
+  .yellow-chair { background-image: url('sprites/yellow-chair.png'); width:100px; height:110px; }
+  .floor-pillow { background-image: url('sprites/floor-pillow.png'); width:60px; height:60px; }
+  .floor-pillows { background-image: url('sprites/floor-pillows.png'); width:80px; height:80px; }
+  .purple-floor-pillows { background-image: url('sprites/purple-floor-pillows.png'); width:80px; height:80px; }
+  .pouf-stack-pillows { background-image: url('sprites/pouf-stack-pillows.png'); width:90px; height:90px; }
+  .potted-plant { background-image: url('sprites/potted-plant.png'); width:80px; height:80px; }
+  .pink-potted-plant { background-image: url('sprites/pink-potted-plant.png'); width:80px; height:80px; }
+  .lake-art { background-image: url('sprites/lake-art.png'); width:100px; height:100px; }
+  .macrame-art { background-image: url('sprites/macrame-art.png'); width:100px; height:100px; }
+  .meadow-art { background-image: url('sprites/meadow-art.png'); width:100px; height:100px; }
+  .mirror-art { background-image: url('sprites/mirror-art.png'); width:100px; height:100px; }
+  .wood-floor-shelves { background-image: url('sprites/wood-floor-shelves.png'); width:120px; height:100px; }
+  .purple-rug { background-image: url('sprites/purple-rug.png'); width:120px; height:60px; }
+  .vertical-rug { background-image: url('sprites/vertical-rug.png'); width:60px; height:120px; }
+
+  /* ── Characters (Using Your Filenames) ── */
+  .character { position: absolute; background-size: contain; background-repeat: no-repeat; z-index: 50; transition: left 3s linear, top 3s linear; filter: drop-shadow(3px 5px 8px rgba(0,0,0,0.4)); pointer-events: none; }
+  #human { width: 68px; height: 95px; background-image: url('sprites/human.png'); }
+  #human.walking { background-image: url('sprites/human-walk.png') !important; }
+  #human.walking2 { background-image: url('sprites/human-walk-2.png') !important; }
+
+  #cat1, #cat2 { width: 52px; height: 42px; background-image: url('sprites/cat-sit.png'); z-index: 20; }
+  .cat-walking { background-image: url('sprites/cat-walk.png') !important; }
+</style>
+</head>
+<body>
+
+<button id="toggleSidebar" class="ui-btn">☰</button>
+<button id="musicBtn" class="ui-btn">🎶</button>
+<button id="saveBtn" class="ui-btn">📸</button>
+
+<audio id="bgMusic" src="audio/boho-bg.mp3" loop></audio>
+
+<aside id="sidebar">
+  <div id="sidebar-header">
+    <h2>Boho Master</h2>
+    <input type="color" id="wallPicker" value="#4a5d6a">
+  </div>
+  <div id="sidebar-body">
+    <h3>Tools</h3>
+    <button class="spawn-btn" onclick="saveRoom()">💾 Save</button>
+    <button class="spawn-btn" onclick="loadRoom()">📂 Load</button>
+    <button class="spawn-btn" onclick="clearRoom()">🧹 Clear</button>
+
+    <h3>Furniture</h3>
+    <button class="spawn-btn" data-type="green-couch" data-zone="floor">Green Couch</button>
+    <button class="spawn-btn" data-type="dark-purple-couch" data-zone="floor">Dark Couch</button>
+    <button class="spawn-btn" data-type="pink-couch" data-zone="floor">Pink Couch</button>
+    <button class="spawn-btn" data-type="purple-couch" data-zone="floor">Purple Couch</button>
+    <button class="spawn-btn" data-type="red-couch" data-zone="floor">Red Couch</button>
+    <button class="spawn-btn" data-type="purple-wingback-chair" data-zone="floor">Wingback</button>
+    <button class="spawn-btn" data-type="yellow-chair" data-zone="floor">Yellow Chair</button>
+    <button class="spawn-btn" data-type="potted-plant" data-zone="floor">Plant</button>
+    <button class="spawn-btn" data-type="pink-potted-plant" data-zone="floor">Pink Plant</button>
+    <button class="spawn-btn" data-type="wood-floor-shelves" data-zone="floor">Shelves</button>
+    <button class="spawn-btn" data-type="purple-rug" data-zone="floor">Purple Rug</button>
+    <button class="spawn-btn" data-type="vertical-rug" data-zone="floor">Vertical Rug</button>
+    </div>
+</aside>
+
+<div class="room">
+  <div class="wall" id="wall"></div>
+  <div class="floor"></div>
+  <div id="items"></div>
+  <div id="human" class="character"></div>
+  <div id="cat1" class="character"></div>
+  <div id="cat2" class="character"></div>
+</div>
+
+<script>
+let zTop = 10;
+const wall = document.getElementById('wall');
+const itemsEl = document.getElementById('items');
+const human = document.getElementById('human');
+
+function moveCharacters() {
+  const newLeft = (Math.random() * 70 + 15);
+  human.style.left = newLeft + '%';
+  human.style.top = (Math.random() * 20 + 50) + '%';
+
+  // Your 2-frame filename toggle
+  let walkToggle = setInterval(() => {
+    human.classList.toggle('walking');
+    setTimeout(() => human.classList.toggle('walking2'), 250);
+  }, 500);
+
+  [cat1, cat2].forEach(cat => {
+    cat.classList.add('cat-walking');
+    cat.style.left = (Math.random() * 70 + 10) + '%';
+    cat.style.top = (Math.random() * 25 + 55) + '%';
+  });
+
+  setTimeout(() => {
+    clearInterval(walkToggle);
+    human.classList.remove('walking', 'walking2');
+    [cat1, cat2].forEach(cat => cat.classList.remove('cat-walking'));
+  }, 3000);
+}
+
+function spawnItem(type, zone) {
+  const el = document.createElement('div'); el.className = `item ${type}`;
+  el.style.left = '150px'; el.style.top = (zone === 'floor' ? '65%' : '20%');
+  const del = document.createElement('button'); del.className='delete-btn'; del.textContent='×';
+  del.onclick = () => el.remove(); el.appendChild(del);
+  itemsEl.appendChild(el); makeDraggable(el);
+}
+
+function makeDraggable(el) {
+  let dragging = false, startX, startY, startL, startT;
+  el.onpointerdown = e => {
+    if(e.target.tagName==='BUTTON') return;
+    dragging = true; startX = e.clientX; startY = e.clientY;
+    const r = el.getBoundingClientRect(); startL = r.left; startT = r.top;
+    el.style.zIndex = ++zTop;
+    document.querySelectorAll('.item').forEach(i => i.classList.remove('selected'));
+    el.classList.add('selected');
+  };
+  el.onpointermove = e => { if(dragging){ el.style.left=(startL+e.clientX-startX)+'px'; el.style.top=(startT+e.clientY-startY)+'px'; }};
+  el.onpointerup = () => dragging = false;
+}
+
+document.getElementById('toggleSidebar').onclick = () => document.getElementById('sidebar').classList.toggle('closed');
+document.getElementById('wallPicker').oninput = (e) => wall.style.background = e.target.value;
+document.querySelectorAll('.spawn-btn[data-type]').forEach(b => b.onclick = () => spawnItem(b.dataset.type, b.dataset.zone));
+document.getElementById('musicBtn').onclick = () => { const m=document.getElementById('bgMusic'); m.paused?m.play():m.pause(); };
+document.getElementById('saveBtn').onclick = async () => { 
+  document.querySelectorAll('.item').forEach(i => i.classList.remove('selected'));
+  const c = await html2canvas(document.querySelector('.room'));
+  const a = document.createElement('a'); a.download='boho.png'; a.href=c.toDataURL(); a.click();
+};
+
+function saveRoom() { 
+  const items = []; document.querySelectorAll('.item').forEach(el => { items.push({ type: [...el.classList][1], left: el.style.left, top: el.style.top }); });
+  localStorage.setItem('bohoMaster', JSON.stringify({ wall: wall.style.background, items }));
+  alert('Saved!');
+}
+function loadRoom() {
+  const d = JSON.parse(localStorage.getItem('bohoMaster'));
+  if(!d) return; itemsEl.innerHTML=''; wall.style.background=d.wall;
+  d.items.forEach(i => spawnItem(i.type, 'floor'));
+}
+function clearRoom() { if(confirm('Clear?')) itemsEl.innerHTML=''; }
+
+setTimeout(moveCharacters, 1000);
+setInterval(moveCharacters, 15000);
+</script>
+</body>
+</html>

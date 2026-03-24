@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Boho Life Collage</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<style>
+  :root {
+    --wall-color: #4a5d6a;
+    --floor-color: #3d2b1f;
+    --sidebar-bg: #1a1f24;
+    --sidebar-header: #141820;
+    --btn-bg: #2a3540;
+    --btn-hover: #374b5a;
+    --accent: #8ec5d6;
+    --text: #d4c9bc;
+    --text-muted: #7a8a94;
+    --delete-bg: rgba(180,60,60,0.85);
+    --delete-hover: rgba(210,80,80,0.95);
+    --sidebar-width: 220px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Georgia', serif;
+    background: #0f1418;
+    overflow: hidden;
+    height: 100vh; width: 100vw;
+  }
+
+  /* ── Sidebar ──────────────────────────────────── */
+  #sidebar {
+    position: fixed; top: 0; left: 0;
+    width: var(--sidebar-width); height: 100%;
+    background: var(--sidebar-bg); color: var(--text);
+    z-index: 999; display: flex; flex-direction: column;
+    transition: transform 0.3s ease;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+  }
+  #sidebar.closed { transform: translateX(-100%); }
+
+  #sidebar-header {
+    background: var(--sidebar-header);
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    flex-shrink: 0;
+  }
+  #sidebar-header h2 {
+    font-size: 16px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--accent);
+    margin-bottom: 10px;
+  }
+  #color-row {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  #wallPicker {
+    width: 32px; height: 24px; border: none;
+    border-radius: 4px; cursor: pointer; padding: 0; background: none;
+  }
+
+  #sidebar-body {
+    overflow-y: auto; flex: 1;
+    padding: 10px 12px 20px;
+    scrollbar-width: thin; scrollbar-color: #2e3d48 transparent;
+  }
+  #sidebar-body::-webkit-scrollbar { width: 4px; }
+  #sidebar-body::-webkit-scrollbar-thumb { background: #2e3d48; border-radius: 4px; }
+  #sidebar-body h3 {
+    font-size: 10px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--text-muted);
+    margin: 16px 0 6px; padding-bottom: 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .spawn-btn {
+    display: block; width: 100%; margin: 4px 0;
+    padding: 7px 10px; background: var(--btn-bg);
+    color: var(--text); border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px; font-size: 12px; text-align: left;
+    cursor: pointer; transition: background 0.15s, border-color 0.15s;
+  }
+  .spawn-btn:hover { background: var(--btn-hover); border-color: rgba(142,197,214,0.3); }
+
+  /* ── Fixed UI Buttons ─────────────────────────── */
+  .ui-btn {
+    position: fixed; z-index: 1000;
+    background: var(--sidebar-header);
+    color: var(--accent);
+    border: 1px solid rgba(142,197,214,0.25);
+    border-radius: 6px; cursor: pointer;
+    font-size: 12px; font-family: 'Georgia', serif;
+    padding: 6px 10px; text-decoration: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+    opacity: 0; animation: fadeIn 1s ease 0.3s forwards;
+  }
+  .ui-btn:hover { background: #222c34; }
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  #toggleSidebar { top: 10px; left: 10px; width: 38px; height: 38px; font-size: 18px; opacity: 1; animation: none; }
+  #musicBtn      { top: 10px; right: 10px; width: 38px; height: 38px; font-size: 16px; }
+  #saveBtn       { bottom: 10px; right: 10px; }
+  #homeBtn       { bottom: 10px; left: 10px; }
+  #gamesBtn      { bottom: 10px; left: 100px; }
+
+  /* ── Room ─────────────────────────────────────── */
+  .room { position: relative; width: 100vw; height: 100vh; }
+  .wall { height: 70%; background: var(--wall-color); position: relative; transition: background 0.3s; }
+  .floor { width: 100%; height: 30%; background: var(--floor-color); }
+
+  /* ── Items Layer ──────────────────────────────── */
+  #items { position: absolute; inset: 0; pointer-events: none; }
+
+  .item {
+    position: absolute; background-size: contain; background-repeat: no-repeat;
+    background-color: transparent; cursor: grab; pointer-events: all;
+    user-select: none; touch-action: none; overflow: visible;
+    filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.45));
+    transform-origin: center center;
+  }
+  .item:active { cursor: grabbing; }
+
+  .item .delete-btn {
+    position: absolute; top: -10px; right: -10px; width: 22px; height: 22px;
+    background: var(--delete-bg); color: #fff; border: 2px solid rgba(255,255,255,0.4);
+    border-radius: 50%; font-size: 14px; line-height: 18px; text-align: center;
+    cursor: pointer; opacity: 0; transition: opacity 0.15s; z-index: 20; pointer-events: none;
+  }
+  .item .resize-handle {
+    position: absolute; bottom: -10px; right: -10px; width: 20px; height: 20px;
+    background: var(--accent); border: 2px solid rgba(255,255,255,0.5);
+    border-radius: 50%; cursor: se-resize; opacity: 0; transition: opacity 0.15s;
+    z-index: 20; pointer-events: none;
+  }
+  .item .rotate-handle {
+    position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+    width: 20px; height: 20px; background: #ffd166; border: 2px solid rgba(255,255,255,0.6);
+    border-radius: 50%; cursor: grab; opacity: 0; transition: opacity 0.15s;
+    z-index: 20; pointer-events: none; font-size: 10px; display: flex; align-items: center; justify-content: center;
+  }
+
+  .item.selected { outline: 1px dashed rgba(142,197,214,0.4); outline-offset: 4px; }
+  .item.selected .delete-btn, .item.selected .resize-handle, .item.selected .rotate-handle { opacity: 1; pointer-events: all; }
+
+  /* ── Sprites ── */
+  .green-couch            { background-image: url('sprites/green-couch.png');             width:120px; height:120px; }
+  .dark-purple-couch      { background-image: url('sprites/dark-purple-couch.png');       width:120px; height:120px; }
+  .pink-couch             { background-image: url('sprites/pink-couch.png');              width:120px; height:120px; }
+  .purple-couch           { background-image: url('sprites/purple-couch.png');            width:120px; height:120px; }
+  .red-couch              { background-image: url('sprites/red-couch.png');               width:120px; height:120px; }
+  .purple-wingback-chair  { background-image: url('sprites/purple-wingback-chair.png');   width:100px; height:110px; }
+  .yellow-chair           { background-image: url('sprites/yellow-chair.png');            width:100px; height:110px; }
+  .floor-pillow           { background-image: url('sprites/floor-pillow.png');            width:60px;  height:60px;  }
+  .floor-pillows          { background-image: url('sprites/floor-pillows.png');           width:80px;  height:80px;  }
+  .purple-floor-pillows   { background-image: url('sprites/purple-floor-pillows.png');    width:80px;  height:80px;  }
+  .pouf-stack-pillows     { background-image: url('sprites/pouf-stack-pillows.png');      width:90px;  height:90px;  }
+  .stool-blanket-stack    { background-image: url('sprites/stool-blanket-stack.png');     width:80px;  height:80px;  }
+  .basket-blanket-stack   { background-image: url('sprites/basket-blanket-stack.png');    width:80px;  height:80px;  }
+  .stacked-blankets       { background-image: url('sprites/stacked-blankets.png');        width:80px;  height:80px;  }
+  .potted-plant           { background-image: url('sprites/potted-plant.png');            width:80px;  height:80px;  }
+  .pink-potted-plant      { background-image: url('sprites/pink-potted-plant.png');       width:80px;  height:80px;  }
+  .purple-plant-stand     { background-image: url('sprites/purple-plant-stand.png');      width:80px;  height:80px;  }
+  .lake-art               { background-image: url('sprites/lake-art.png');                width:100px; height:100px; }
+  .macrame-art            { background-image: url('sprites/macrame-art.png');             width:100px; height:100px; }
+  .meadow-art             { background-image: url('sprites/meadow-art.png');              width:100px; height:100px; }
+  .mirror-art             { background-image: url('sprites/mirror-art.png');              width:100px; height:100px; }
+  .mountain-art           { background-image: url('sprites/mountain-art.png');            width:100px; height:100px; }
+  .tapestry-art           { background-image: url('sprites/tapestry-art.png');            width:100px; height:100px; }
+  .horizontal-tapestry-art{ background-image: url('sprites/horizontal-tapestry-art.png'); width:130px; height:80px;  }
+  .wall-shelf-art         { background-image: url('sprites/wall-shelf-art.png');          width:100px; height:100px; }
+  .ceiling-light          { background-image: url('sprites/ceiling-light.png');           width:100px; height:100px; }
+  .wood-floor-shelves     { background-image: url('sprites/wood-floor-shelves.png');      width:120px; height:100px; }
+  .blue-curio             { background-image: url('sprites/blue-curio.png');              width:80px;  height:100px; }
+  .light-purple-curio     { background-image: url('sprites/light-purple-curio.png');      width:80px;  height:100px; }
+  .pink-curio             { background-image: url('sprites/pink-curio.png');              width:80px;  height:100px; }
+  .purple-rug             { background-image: url('sprites/purple-rug.png');              width:120px; height:60px;  }
+  .vertical-rug           { background-image: url('sprites/vertical-rug.png');            width:60px;  height:120px; }
+  .amethyst-wand          { background-image: url('sprites/amethyst-wand.png');           width:60px;  height:60px;  }
+
+  /* ── Life Sim Style ───────────────────────────── */
+  .character {
+    position: absolute; background-size: contain; background-repeat: no-repeat;
+    pointer-events: none; z-index: 5; filter: drop-shadow(3px 5px 8px rgba(0,0,0,0.4));
+  }
+  #human { width: 68px; height: 95px; background-image: url('sprites/boho-human.png'); }
+  #cat1, #cat2 { width: 52px; height: 42px; background-image: url('sprites/boho-cat.png'); }
+
+  .mood-particle {
+    position: absolute; font-size: 18px; pointer-events: none;
+    animation: moodFloat 2.5s ease-out forwards; z-index: 30;
+  }
+  @keyframes moodFloat {
+    0%   { transform: translateY(0); opacity: 1; }
+    100% { transform: translateY(-80px); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<button id="toggleSidebar" class="ui-btn">☰</button>
+<button id="musicBtn" class="ui-btn" title="Toggle music">🎶</button>
+<a id="homeBtn"  class="ui-btn" href="https://maximumreality.xyz">🏙️ Home</a>
+<a id="gamesBtn" class="ui-btn" href="https://maximumreality.github.io/game/">🕹️ Games</a>
+<button id="saveBtn" class="ui-btn">📸 Save PNG</button>
+
+<audio id="bgMusic" src="audio/boho-bg.mp3" loop></audio>
+
+<aside id="sidebar">
+  <div id="sidebar-header">
+    <h2>Boho Life</h2>
+    <div id="color-row">
+      <input type="color" id="wallPicker" value="#4a5d6a">
+      <span>Wall Color</span>
+    </div>
+  </div>
+  <div id="sidebar-body">
+    <h3>Room</h3>
+    <button class="spawn-btn" onclick="saveRoom()">💾 Save Room</button>
+    <button class="spawn-btn" onclick="loadRoom()">📂 Load Room</button>
+    <button class="spawn-btn" onclick="clearRoom()">🧹 Clear All</button>
+
+    <h3>Couches & Chairs</h3>
+    <button class="spawn-btn" data-type="green-couch" data-zone="floor">Green Couch</button>
+    <button class="spawn-btn" data-type="dark-purple-couch" data-zone="floor">Dark Purple Couch</button>
+    <button class="spawn-btn" data-type="pink-couch" data-zone="floor">Pink Couch</button>
+    <button class="spawn-btn" data-type="purple-couch" data-zone="floor">Purple Couch</button>
+    <button class="spawn-btn" data-type="red-couch" data-zone="floor">Red Couch</button>
+    <button class="spawn-btn" data-type="purple-wingback-chair" data-zone="floor">Wingback</button>
+    <button class="spawn-btn" data-type="yellow-chair" data-zone="floor">Yellow Chair</button>
+
+    <h3>Plants</h3>
+    <button class="spawn-btn" data-type="potted-plant" data-zone="floor">Plant</button>
+    <button class="spawn-btn" data-type="pink-potted-plant" data-zone="floor">Pink Plant</button>
+    <button class="spawn-btn" data-type="purple-plant-stand" data-zone="floor">Plant Stand</button>
+
+    <h3>Wall Art</h3>
+    <button class="spawn-btn" data-type="lake-art" data-zone="wall">Lake Art</button>
+    <button class="spawn-btn" data-type="macrame-art" data-zone="wall">Macramé</button>
+    <button class="spawn-btn" data-type="meadow-art" data-zone="wall">Meadow</button>
+    <button class="spawn-btn" data-type="mirror-art" data-zone="wall">Mirror</button>
+
+    <h3>Storage & Rugs</h3>
+    <button class="spawn-btn" data-type="wood-floor-shelves" data-zone="floor">Shelves</button>
+    <button class="spawn-btn" data-type="purple-rug" data-zone="floor">Purple Rug</button>
+    <button class="spawn-btn" data-type="vertical-rug" data-zone="floor">Vertical Rug</button>
+  </div>
+</aside>
+
+<div class="room">
+  <div class="wall" id="wall"></div>
+  <div class="floor"></div>
+  <div id="items"></div>
+  <div id="human" class="character"></div>
+  <div id="cat1" class="character"></div>
+  <div id="cat2" class="character"></div>
+</div>
+
+<script>
+let zTop = 10;
+const sidebar = document.getElementById('sidebar');
+const itemsEl = document.getElementById('items');
+const human = document.getElementById('human');
+const cat1 = document.getElementById('cat1');
+const cat2 = document.getElementById('cat2');
+const wall = document.getElementById('wall');
+const picker = document.getElementById('wallPicker');
+
+const ZONE_TOP = { floor: '65%', wall: '20%', ceiling: '5%' };
+
+// UI Controls
+document.getElementById('toggleSidebar').addEventListener('click', () => sidebar.classList.toggle('closed'));
+picker.addEventListener('input', e => wall.style.background = e.target.value);
+document.querySelectorAll('.spawn-btn[data-type]').forEach(btn => {
+  btn.addEventListener('click', () => spawnItem(btn.dataset.type, btn.dataset.zone));
+});
+
+function deselectAll() { document.querySelectorAll('.item.selected').forEach(el => el.classList.remove('selected')); }
+function selectItem(el) { deselectAll(); el.classList.add('selected'); bringToFront(el); }
+function bringToFront(el) { el.style.zIndex = ++zTop; }
+
+function applyTransform(el) {
+  const angle = parseFloat(el.dataset.rotation) || 0;
+  const flipped = el.dataset.flipped === 'true';
+  el.style.transform = `scaleX(${flipped ? -1 : 1}) rotate(${angle}deg)`;
+}
+
+// Draggable with Double Tap Flip
+function makeDraggable(el) {
+  let startX, startY, startLeft, startTop, dragging = false, moved = false, lastTap = 0;
+  el.addEventListener('pointerdown', e => {
+    if (e.target.tagName === 'BUTTON' || e.target.classList.contains('resize-handle') || e.target.classList.contains('rotate-handle')) return;
+    dragging = true; moved = false;
+    startX = e.clientX; startY = e.clientY;
+    const rect = el.getBoundingClientRect();
+    startLeft = rect.left; startTop = rect.top;
+    el.setPointerCapture(e.pointerId);
+    selectItem(el);
+  });
+  el.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    moved = true;
+    el.style.left = (startLeft + e.clientX - startX) + 'px';
+    el.style.top = (startTop + e.clientY - startY) + 'px';
+  });
+  el.addEventListener('pointerup', e => {
+    dragging = false;
+    if (!moved) {
+      const now = Date.now();
+      if (now - lastTap < 300) {
+        el.dataset.flipped = (el.dataset.flipped === 'true') ? 'false' : 'true';
+        applyTransform(el);
+      }
+      lastTap = now;
+    }
+    updateHappiness();
+  });
+}
+
+// Resizable & Rotatable
+function makeResizable(el, handle) {
+  handle.addEventListener('pointerdown', e => {
+    e.stopPropagation(); handle.setPointerCapture(e.pointerId);
+    const sX = e.clientX, sY = e.clientY, sW = el.offsetWidth, sH = el.offsetHeight;
+    const onMove = ev => {
+      el.style.width = Math.max(30, sW + ev.clientX - sX) + 'px';
+      el.style.height = Math.max(30, sH + ev.clientY - sY) + 'px';
+    };
+    const onUp = () => {
+      handle.removeEventListener('pointermove', onMove);
+      handle.removeEventListener('pointerup', onUp);
+      updateHappiness();
+    };
+    handle.addEventListener('pointermove', onMove); handle.addEventListener('pointerup', onUp);
+  });
+}
+
+function makeRotatable(el, handle) {
+  handle.addEventListener('pointerdown', e => {
+    e.stopPropagation(); handle.setPointerCapture(e.pointerId);
+    const rect = el.getBoundingClientRect(), cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+    const onMove = ev => {
+      const angle = Math.atan2(ev.clientY - cy, ev.clientX - cx) * (180 / Math.PI) + 90;
+      el.dataset.rotation = angle; applyTransform(el);
+    };
+    const onUp = () => {
+      handle.removeEventListener('pointermove', onMove);
+      handle.removeEventListener('pointerup', onUp);
+      updateHappiness();
+    };
+    handle.addEventListener('pointermove', onMove); handle.addEventListener('pointerup', onUp);
+  });
+}
+
+function spawnItem(type, zone, opts = {}) {
+  const el = document.createElement('div');
+  el.classList.add('item', type);
+  el.style.top = opts.top || ZONE_TOP[zone];
+  el.style.left = opts.left || '140px';
+  if(opts.width) el.style.width = opts.width;
+  if(opts.height) el.style.height = opts.height;
+  el.dataset.rotation = opts.rotation || 0;
+  el.dataset.flipped = opts.flipped || 'false';
+  applyTransform(el);
+
+  const del = document.createElement('button'); del.className = 'delete-btn'; del.textContent = '×';
+  del.onclick = (e) => { e.stopPropagation(); el.remove(); updateHappiness(); };
+  el.appendChild(del);
+
+  const res = document.createElement('div'); res.className = 'resize-handle'; el.appendChild(res);
+  const rot = document.createElement('div'); rot.className = 'rotate-handle'; rot.textContent = '↻'; el.appendChild(rot);
+
+  itemsEl.appendChild(el);
+  makeDraggable(el); makeResizable(el, res); makeRotatable(el, rot);
+  selectItem(el); updateHappiness();
+  return el;
+}
+
+// ── Life Sim Logic ──
+let happiness = 50;
+let humanWalkInterval, cat1WalkInterval, cat2WalkInterval;
+
+function startWalking(char, prefix) {
+  let frame = 0; char.classList.add('walking');
+  return setInterval(() => {
+    for(let i=0; i<8; i++) char.classList.remove(prefix + i);
+    char.classList.add(prefix + frame);
+    frame = (frame + 1) % 8;
+  }, 100);
+}
+
+function stopWalking(char, interval) {
+  clearInterval(interval); char.classList.remove('walking');
+  for(let i=0; i<8; i++) char.classList.remove('human-frame-'+i, 'cat-frame-'+i);
+}
+
+function moveCharacters() {
+  const rect = document.querySelector('.room').getBoundingClientRect();
+  const move = (char, time, pref) => {
+    char.style.transition = `left ${time}s, top ${time}s`;
+    char.style.left = (Math.random() * 70 + 10) + '%';
+    char.style.top = (Math.random() * 20 + 50) + '%';
+    const interval = startWalking(char, pref);
+    setTimeout(() => stopWalking(char, interval), time * 1000);
+  };
+  move(human, 2.8, 'human-frame-');
+  move(cat1, 2, 'cat-frame-');
+  move(cat2, 2.2, 'cat-frame-');
+  showMood();
+}
+
+function showMood() {
+  const emojis = happiness > 70 ? ['✨','💖'] : ['🐾','🌿'];
+  for (let i = 0; i < 5; i++) {
+    const p = document.createElement('div'); p.className = 'mood-particle';
+    p.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    p.style.left = (Math.random()*80 + 10) + '%'; p.style.top = '60%';
+    document.querySelector('.room').appendChild(p);
+    setTimeout(() => p.remove(), 2000);
+  }
+}
+
+function updateHappiness() {
+  let score = 30 + (document.querySelectorAll('.item').length * 5);
+  happiness = Math.min(100, score);
+  if (Math.random() > 0.5) moveCharacters();
+}
+
+// ── Persistence & Utilities ──
+function saveRoom() {
+  const items = [];
+  document.querySelectorAll('.item').forEach(el => {
+    items.push({ type: [...el.classList].find(c => c !== 'item' && c !== 'selected'), left: el.style.left, top: el.style.top, width: el.style.width, height: el.style.height, rotation: el.dataset.rotation, flipped: el.dataset.flipped });
+  });
+  localStorage.setItem('bohoData', JSON.stringify({ wall: wall.style.background, items }));
+  alert('Room Saved!');
+}
+
+function loadRoom() {
+  const data = JSON.parse(localStorage.getItem('bohoData'));
+  if (!data) return;
+  itemsEl.innerHTML = '';
+  wall.style.background = data.wall;
+  data.items.forEach(d => spawnItem(d.type, 'floor', d));
+}
+
+function clearRoom() { if(confirm('Clear all?')) { itemsEl.innerHTML = ''; updateHappiness(); } }
+
+// Audio and initial state
+const music = document.getElementById('bgMusic');
+document.getElementById('musicBtn').onclick = () => {
+  if (music.paused) { music.play(); music.volume = 0.3; } else { music.pause(); }
+};
+
+document.getElementById('saveBtn').onclick = async () => {
+  deselectAll();
+  const canvas = await html2canvas(document.querySelector('.room'));
+  const link = document.createElement('a'); link.download = 'boho.png';
+  link.href = canvas.toDataURL(); link.click();
+};
+
+setTimeout(moveCharacters, 1000);
+</script>
+</body>
+</html>

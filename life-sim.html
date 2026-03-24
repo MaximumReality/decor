@@ -31,11 +31,12 @@
   .room { position: relative; width: 100vw; height: 100vh; }
   .wall { height: 70%; background: var(--wall-color); }
   .floor { height: 30%; background: var(--floor-color); }
-  #items { position: absolute; inset: 0; pointer-events: none; }
+  #items { position: absolute; inset: 0; pointer-events: none; z-index: 10; }   /* furniture layer */
 
   .item {
     position: absolute; background-size: contain; background-repeat: no-repeat;
     cursor: grab; pointer-events: all; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.45));
+    z-index: 10;   /* all furniture stays below human */
   }
   .item .delete-btn {
     position: absolute; top: -10px; right: -10px; width: 22px; height: 22px;
@@ -63,14 +64,24 @@
   .purple-rug { background-image: url('sprites/purple-rug.png'); width:120px; height:60px; }
   .vertical-rug { background-image: url('sprites/vertical-rug.png'); width:60px; height:120px; }
 
-  /* Characters - Super Simple */
+  /* Characters - Human always on top */
   .character {
     position: absolute; background-size: contain; background-repeat: no-repeat;
-    pointer-events: none; z-index: 5; filter: drop-shadow(3px 5px 8px rgba(0,0,0,0.4));
+    pointer-events: none; filter: drop-shadow(3px 5px 8px rgba(0,0,0,0.4));
     transition: left 2.6s ease-in-out, top 2.6s ease-in-out;
   }
-  #human { width: 68px; height: 95px; background-image: url('sprites/human.png'); } /* idle face forward */
-  #cat1, #cat2 { width: 52px; height: 42px; background-image: url('sprites/cat-sit.png'); }
+  #human { 
+    width: 68px; 
+    height: 95px; 
+    background-image: url('sprites/human.png');   /* idle face forward */
+    z-index: 50;   /* HIGH - always on top of everything */
+  }
+  #cat1, #cat2 { 
+    width: 52px; 
+    height: 42px; 
+    background-image: url('sprites/cat-sit.png'); 
+    z-index: 20;   /* cats can go behind furniture */
+  }
 
   /* Walking states */
   #human.walking  { background-image: url('sprites/human-walk.png'); }
@@ -81,7 +92,7 @@
 
   .mood-particle {
     position: absolute; font-size: 20px; pointer-events: none;
-    animation: moodFloat 2.5s ease-out forwards; z-index: 30;
+    animation: moodFloat 2.5s ease-out forwards; z-index: 60;
   }
   @keyframes moodFloat { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-90px); opacity: 0; } }
 </style>
@@ -175,11 +186,11 @@ function makeDraggable(el) {
   el.addEventListener('pointerup', () => { dragging = false; updateHappiness(); });
 }
 
-// Life Sim - Super Simple 2-frame human + 3-state cats
+// Life Sim - Human always on top
 let happiness = 50;
 
 function moveCharacters() {
-  // Human moves with 2-frame walk
+  // Human - always walks in front
   human.style.transition = 'left 2.8s ease-in-out, top 2.8s ease-in-out';
   human.style.left = (Math.random() * 60 + 20) + '%';
   human.style.top  = (Math.random() * 30 + 48) + '%';
@@ -188,7 +199,7 @@ function moveCharacters() {
   setTimeout(() => { human.classList.remove('walking'); human.classList.add('walking2'); }, 900);
   setTimeout(() => human.classList.remove('walking2'), 1900);
 
-  // Cats - walk then lay down
+  // Cats (can go behind furniture)
   [cat1, cat2].forEach((cat, i) => {
     cat.style.transition = 'left 2.1s ease-in-out, top 2.1s ease-in-out';
     cat.style.left = (Math.random() * 65 + 15) + '%';
@@ -232,7 +243,7 @@ setTimeout(() => {
   moveCharacters();
 }, 600);
 
-// Gentle idle movement every ~12 seconds
+// Gentle idle movement
 setInterval(() => { if (Math.random() > 0.4) moveCharacters(); }, 12000);
 
 // Save / Load / Clear / Screenshot

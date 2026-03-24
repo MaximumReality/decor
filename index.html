@@ -331,6 +331,12 @@ function bringToFront(el) {
 }
 
 // ── Spawn ──────────────────────────────────────────
+function applyTransform(el) {
+  const angle   = parseFloat(el.dataset.rotation) || 0;
+  const flipped = el.dataset.flipped === 'true';
+  el.style.transform = `scaleX(${flipped ? -1 : 1}) rotate(${angle}deg)`;
+}
+
 function spawnItem(type, zone, opts = {}) {
   const el = document.createElement('div');
   el.classList.add('item', type);
@@ -338,12 +344,9 @@ function spawnItem(type, zone, opts = {}) {
   el.style.left = opts.left || '140px';
   if (opts.width)  el.style.width  = opts.width;
   if (opts.height) el.style.height = opts.height;
-  if (opts.rotation) {
-    el.style.transform = `rotate(${opts.rotation}deg)`;
-    el.dataset.rotation = opts.rotation;
-  } else {
-    el.dataset.rotation = 0;
-  }
+  el.dataset.rotation = opts.rotation || 0;
+  el.dataset.flipped  = opts.flipped  || 'false';
+  applyTransform(el);
   bringToFront(el);
 
   // Delete
@@ -364,7 +367,7 @@ function spawnItem(type, zone, opts = {}) {
   // Rotate
   const rotateHandle = document.createElement('div');
   rotateHandle.className = 'rotate-handle';
-  rotateHandle.title = 'Drag to rotate';
+  rotateHandle.title = 'Drag to rotate • Double-tap item to flip';
   rotateHandle.textContent = '↻';
   el.appendChild(rotateHandle);
 
@@ -377,10 +380,11 @@ function spawnItem(type, zone, opts = {}) {
   return el;
 }
 
-// ── Drag ───────────────────────────────────────────
+// ── Drag (with double-tap flip) ────────────────────
 function makeDraggable(el) {
   let startX, startY, startLeft, startTop;
   let dragging = false, moved = false;
+  let lastTap = 0;
 
   el.addEventListener('pointerdown', e => {
     if (e.target.classList.contains('delete-btn') ||
@@ -405,9 +409,19 @@ function makeDraggable(el) {
     el.style.top  = (startTop  + dy) + 'px';
   });
 
-  el.addEventListener('pointerup', () => {
+  el.addEventListener('pointerup', e => {
     if (!moved) {
-      el.classList.contains('selected') ? el.classList.remove('selected') : selectItem(el);
+      const now = Date.now();
+      const gap  = now - lastTap;
+      if (gap < 300 && gap > 0) {
+        // Double-tap → flip
+        el.dataset.flipped = (el.dataset.flipped === 'true') ? 'false' : 'true';
+        applyTransform(el);
+        selectItem(el);
+      } else {
+        el.classList.contains('selected') ? el.classList.remove('selected') : selectItem(el);
+      }
+      lastTap = now;
     }
     dragging = false;
   });
@@ -450,8 +464,8 @@ function makeRotatable(el, handle) {
       const cx = rect.left + rect.width  / 2;
       const cy = rect.top  + rect.height / 2;
       const angle = Math.atan2(ev.clientY - cy, ev.clientX - cx) * (180 / Math.PI) + 90;
-      el.style.transform = `rotate(${angle}deg)`;
       el.dataset.rotation = angle;
+      applyTransform(el);
     }
     function onUp() {
       handle.removeEventListener('pointermove', onMove);
@@ -530,6 +544,7 @@ function saveRoom() {
       width:    el.style.width  || '',
       height:   el.style.height || '',
       rotation: el.dataset.rotation || 0,
+      flipped:  el.dataset.flipped  || 'false',
       zIndex:   el.style.zIndex || 10
     });
   });
@@ -553,7 +568,8 @@ function loadRoom() {
       left:     obj.left,
       width:    obj.width,
       height:   obj.height,
-      rotation: parseFloat(obj.rotation) || 0
+      rotation: parseFloat(obj.rotation) || 0,
+      flipped:  obj.flipped || 'false'
     });
     // Restore z-index
     const spawned = itemsEl.lastElementChild;

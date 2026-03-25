@@ -120,7 +120,7 @@
     pointer-events: none; touch-action: none;
     font-size: 10px; display: flex; align-items: center; justify-content: center;
   }
-  .item.selected { outline: 1px dashed rgba(142,197,214,0.4); outline-offset: 4px; }
+  .item.selected { box-shadow: 0 0 0 1px rgba(142,197,214,0.5); outline: none; }
   .item.selected .delete-btn    { opacity: 1;   pointer-events: all; }
   .item.selected .resize-handle { opacity: 0.9; pointer-events: all; }
   .item.selected .rotate-handle { opacity: 0.9; pointer-events: all; }
@@ -129,8 +129,8 @@
   .item.selected .rotate-handle:hover { opacity: 1; }
 
   /* ── Characters ───────────────────────────────── */
-  /* Characters live ABOVE #items but pointer-events off so furniture still works */
-  #characters { position: absolute; inset: 0; pointer-events: none; z-index: 50; }
+  /* z-index 500+ — NO furniture can ever reach this */
+  #characters { position: absolute; inset: 0; pointer-events: none; z-index: 500; }
 
   .character {
     position: absolute; background-size: contain; background-repeat: no-repeat;
@@ -296,7 +296,6 @@
 </div>
 
 <script>
-let zTop = 10;
 const wall    = document.getElementById('wall');
 const picker  = document.getElementById('wallPicker');
 const itemsEl = document.getElementById('items');
@@ -325,7 +324,40 @@ function deselectAll() {
   document.querySelectorAll('.item.selected').forEach(el => el.classList.remove('selected'));
 }
 function selectItem(el) { deselectAll(); el.classList.add('selected'); }
-function bringToFront(el) { el.style.zIndex = ++zTop; }
+// ── Z-index layer system ───────────────────────────
+// Characters live at 500+. Furniture is capped at 499.
+const LAYER_BASE = {
+  'purple-rug': 10, 'vertical-rug': 10,                          // rugs always on bottom
+  'floor-pillow': 20, 'floor-pillows': 20,
+  'purple-floor-pillows': 20, 'pouf-stack-pillows': 20,
+  'stacked-blankets': 25, 'stool-blanket-stack': 25,
+  'basket-blanket-stack': 25,
+  'amethyst-wand': 30,
+  'potted-plant': 35, 'pink-potted-plant': 35, 'purple-plant-stand': 35,
+  'wood-floor-shelves': 40, 'blue-curio': 40,
+  'light-purple-curio': 40, 'pink-curio': 40,
+  'green-couch': 50, 'dark-purple-couch': 50, 'pink-couch': 50,
+  'purple-couch': 50, 'red-couch': 50,
+  'purple-wingback-chair': 55, 'yellow-chair': 55,
+  'lake-art': 60, 'macrame-art': 60, 'meadow-art': 60,
+  'mirror-art': 60, 'mountain-art': 60, 'tapestry-art': 60,
+  'horizontal-tapestry-art': 60, 'wall-shelf-art': 60,
+  'ceiling-light': 65,
+};
+// Per-type bump counter so items of the same type stack in order
+const layerBump = {};
+
+function getBaseLayer(type) {
+  return LAYER_BASE[type] || 45;
+}
+
+function bringToFront(el) {
+  const type = [...el.classList].find(c => c !== 'item' && c !== 'selected') || 'unknown';
+  layerBump[type] = (layerBump[type] || 0) + 1;
+  // Cap at 490 so characters at 500 are always safe
+  const z = Math.min(490, getBaseLayer(type) + layerBump[type]);
+  el.style.zIndex = z;
+}
 
 // ── Floor boundary helper ──────────────────────────
 // Characters must stay in the floor zone (bottom 30% of viewport)
@@ -360,7 +392,8 @@ function spawnItem(type, zone, opts = {}) {
   el.dataset.rotation = opts.rotation || 0;
   el.dataset.flipped  = opts.flipped  || 'false';
   applyTransform(el);
-  bringToFront(el);
+  // Assign starting z from type layer, not a global counter
+  el.style.zIndex = opts.zIndex || getBaseLayer(type);
 
   const del = document.createElement('button');
   del.className = 'delete-btn'; del.textContent = '×';

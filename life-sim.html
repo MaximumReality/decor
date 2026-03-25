@@ -55,7 +55,7 @@
   .wall { height: 70%; background: var(--wall-color); transition: background 0.3s; }
   .floor { height: 30%; background: var(--floor-color); }
 
-  #items { position: absolute; inset: 0; pointer-events: none; z-index: 10; } /* furniture layer */
+  #items { position: absolute; inset: 0; pointer-events: none; z-index: 10; } /* furniture */
 
   .item {
     position: absolute; background-size: contain; background-repeat: no-repeat;
@@ -87,7 +87,7 @@
   .item.selected { filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.45)) drop-shadow(0 0 8px rgba(142,197,214,0.7)); }
   .item.selected .delete-btn, .item.selected .resize-handle, .item.selected .rotate-handle { opacity: 1; pointer-events: all; }
 
-  /* Characters - Human always on top */
+  /* Characters layer - Human always on top */
   #characters { position: absolute; inset: 0; pointer-events: none; z-index: 500; }
 
   .character {
@@ -99,9 +99,15 @@
   #human.walking  { background-image: url('sprites/human-walk.png'); }
   #human.walking2 { background-image: url('sprites/human-walk-2.png'); }
 
-  #cat1, #cat2 { width: 52px; height: 42px; background-image: url('sprites/cat-sit.png'); z-index: 20; }
-  #cat1.walking, #cat2.walking { background-image: url('sprites/cat-walk.png'); }
-  #cat1.laying, #cat2.laying   { background-image: url('sprites/cat-lay.png'); }
+  /* Cat 1 - Azul */
+  #cat1 { width: 52px; height: 42px; background-image: url('sprites/cat-sit.png'); z-index: 20; }
+  #cat1.walking { background-image: url('sprites/cat-walk.png'); }
+  #cat1.laying  { background-image: url('sprites/cat-lay.png'); }
+
+  /* Cat 2 - Mochkil */
+  #cat2 { width: 52px; height: 42px; background-image: url('sprites/cat-sit-2.png'); z-index: 20; }
+  #cat2.walking { background-image: url('sprites/cat-walk-2.png'); }
+  #cat2.laying  { background-image: url('sprites/cat-lay-2.png'); }
 
   .mood-particle {
     position: absolute; font-size: 20px; pointer-events: none;
@@ -265,7 +271,7 @@ function spawnItem(type, zone, opts = {}) {
 }
 
 function makeDraggable(el) {
-  let startX, startY, startLeft, startTop, dragging = false, moved = false, lastTap = 0;
+  let dragging = false, startX, startY, startLeft, startTop, moved = false, lastTap = 0;
   el.addEventListener('pointerdown', e => {
     if (e.target.classList.contains('delete-btn') || e.target.classList.contains('resize-handle') || e.target.classList.contains('rotate-handle')) return;
     dragging = true; moved = false;
@@ -347,7 +353,7 @@ function updateHappiness() {
 }
 
 function moveCharacters() {
-  // Human always on top
+  // Human - always on top
   const hLeft = window.innerWidth * (0.15 + Math.random() * 0.7);
   const hTop  = window.innerHeight * 0.68;
   human.style.left = hLeft + 'px';
@@ -357,20 +363,29 @@ function moveCharacters() {
   setTimeout(() => { human.classList.remove('walking'); human.classList.add('walking2'); }, 900);
   setTimeout(() => human.classList.remove('walking2'), 1900);
 
-  // Cats
-  [cat1, cat2].forEach((cat, i) => {
-    const cLeft = window.innerWidth * (0.12 + Math.random() * 0.72);
-    const cTop  = window.innerHeight * (0.68 + Math.random() * 0.15);
-    cat.style.left = cLeft + 'px';
-    cat.style.top  = cTop + 'px';
+  // Cat 1 - Azul
+  const c1Left = window.innerWidth * (0.12 + Math.random() * 0.72);
+  const c1Top  = window.innerHeight * (0.68 + Math.random() * 0.15);
+  cat1.style.left = c1Left + 'px';
+  cat1.style.top  = c1Top + 'px';
+  cat1.classList.add('walking');
+  setTimeout(() => {
+    cat1.classList.remove('walking');
+    cat1.classList.add('laying');
+  }, 1400);
+  setTimeout(() => cat1.classList.remove('laying'), 3800);
 
-    cat.classList.add('walking');
-    setTimeout(() => {
-      cat.classList.remove('walking');
-      cat.classList.add('laying');
-    }, 1400 + i * 250);
-    setTimeout(() => cat.classList.remove('laying'), 3800);
-  });
+  // Cat 2 - Mochkil
+  const c2Left = window.innerWidth * (0.12 + Math.random() * 0.72);
+  const c2Top  = window.innerHeight * (0.68 + Math.random() * 0.15);
+  cat2.style.left = c2Left + 'px';
+  cat2.style.top  = c2Top + 'px';
+  cat2.classList.add('walking');
+  setTimeout(() => {
+    cat2.classList.remove('walking');
+    cat2.classList.add('laying');
+  }, 1600);
+  setTimeout(() => cat2.classList.remove('laying'), 4000);
 
   showMood();
 }
@@ -427,7 +442,7 @@ document.getElementById('musicBtn').onclick = () => {
   m.paused ? m.play() : m.pause();
 };
 
-// Initial
+// Initial placement
 setTimeout(() => {
   human.style.left = (window.innerWidth * 0.38) + 'px';
   human.style.top  = (window.innerHeight * 0.72) + 'px';

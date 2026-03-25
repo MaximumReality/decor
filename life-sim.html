@@ -10,89 +10,102 @@
     --wall-color: #4a5d6a;
     --floor-color: #3d2b1f;
     --sidebar-bg: #1a1f24;
+    --sidebar-header: #141820;
+    --btn-bg: #2a3540;
+    --btn-hover: #374b5a;
     --accent: #8ec5d6;
+    --text: #d4c9bc;
+    --text-muted: #7a8a94;
+    --delete-bg: rgba(180,60,60,0.85);
+    --delete-hover: rgba(210,80,80,0.95);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Georgia', serif; background: #0f1418; overflow: hidden; height: 100vh; width: 100vw; }
 
-  #sidebar { position: fixed; top: 0; left: 0; width: 220px; height: 100%; background: var(--sidebar-bg); color: #d4c9bc; z-index: 999; display: flex; flex-direction: column; box-shadow: 4px 0 20px rgba(0,0,0,0.5); }
+  #sidebar { position: fixed; top: 0; left: 0; width: 220px; height: 100%; background: var(--sidebar-bg); color: var(--text); z-index: 999; display: flex; flex-direction: column; transition: transform 0.3s ease; box-shadow: 4px 0 20px rgba(0,0,0,0.5); }
   #sidebar.closed { transform: translateX(-100%); }
-  #sidebar-header { background: #141820; padding: 14px 16px; }
-  #sidebar-header h2 { color: var(--accent); text-transform: uppercase; letter-spacing: 2px; }
-  .spawn-btn { display: block; width: 100%; margin: 4px 0; padding: 8px 10px; background: #2a3540; color: #d4c9bc; border: 1px solid rgba(255,255,255,0.06); border-radius: 4px; cursor: pointer; }
-  .spawn-btn:hover { background: #374b5a; }
+  #sidebar-header { background: var(--sidebar-header); padding: 14px 16px 10px; border-bottom: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
+  #sidebar-header h2 { font-size: 16px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+  #color-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+  #wallPicker { width: 32px; height: 24px; border: none; border-radius: 4px; cursor: pointer; padding: 0; background: none; }
+  #sidebar-body { overflow-y: auto; flex: 1; padding: 10px 12px 20px; scrollbar-width: thin; scrollbar-color: #2e3d48 transparent; }
+  #sidebar-body::-webkit-scrollbar { width: 4px; }
+  #sidebar-body::-webkit-scrollbar-thumb { background: #2e3d48; border-radius: 4px; }
+  #sidebar-body h3 { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin: 16px 0 6px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .spawn-btn { display: block; width: 100%; margin: 4px 0; padding: 7px 10px; background: var(--btn-bg); color: var(--text); border: 1px solid rgba(255,255,255,0.06); border-radius: 4px; font-size: 12px; text-align: left; cursor: pointer; transition: background 0.15s; }
+  .spawn-btn:hover { background: var(--btn-hover); }
 
-  .ui-btn { position: fixed; z-index: 1000; background: #141820; color: var(--accent); border: 1px solid rgba(142,197,214,0.25); border-radius: 6px; padding: 6px 10px; cursor: pointer; }
-  #toggleSidebar { top: 10px; left: 10px; }
-  #musicBtn { top: 10px; right: 10px; }
+  .ui-btn { position: fixed; z-index: 1000; background: var(--sidebar-header); color: var(--accent); border: 1px solid rgba(142,197,214,0.25); border-radius: 6px; cursor: pointer; font-size: 12px; font-family: 'Georgia', serif; padding: 6px 10px; }
+  #toggleSidebar { top: 10px; left: 10px; width: 38px; height: 38px; font-size: 18px; }
+  #musicBtn { top: 10px; right: 10px; width: 38px; height: 38px; font-size: 16px; }
   #saveBtn { bottom: 10px; right: 10px; }
 
+  /* Happiness bar */
+  #happiness-bar {
+    position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+    z-index: 1000; background: var(--sidebar-header); border: 1px solid rgba(142,197,214,0.3);
+    border-radius: 20px; padding: 5px 12px; font-size: 11px; color: var(--text-muted);
+    display: flex; align-items: center; gap: 8px;
+  }
+  #happiness-fill { width: 90px; height: 7px; background: #1e2a32; border-radius: 4px; overflow: hidden; }
+  #happiness-fill-inner { height: 100%; background: linear-gradient(to right, #8ec5d6, #ffd166); transition: width 0.6s ease; }
+
   .room { position: relative; width: 100vw; height: 100vh; }
-  .wall { height: 70%; background: var(--wall-color); }
+  .wall { height: 70%; background: var(--wall-color); transition: background 0.3s; }
   .floor { height: 30%; background: var(--floor-color); }
-  #items { position: absolute; inset: 0; pointer-events: none; z-index: 10; }   /* furniture layer */
+
+  #items { position: absolute; inset: 0; pointer-events: none; z-index: 10; } /* furniture layer */
 
   .item {
     position: absolute; background-size: contain; background-repeat: no-repeat;
-    cursor: grab; pointer-events: all; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.45));
-    z-index: 10;   /* all furniture stays below human */
+    background-color: transparent; cursor: grab; pointer-events: all;
+    user-select: none; touch-action: none; overflow: visible;
+    filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.45));
+    transform-origin: center center;
+    z-index: 10;
   }
+  .item:active { cursor: grabbing; }
+
   .item .delete-btn {
     position: absolute; top: -10px; right: -10px; width: 22px; height: 22px;
-    background: rgba(180,60,60,0.85); color: white; border-radius: 50%; text-align: center;
-    line-height: 18px; opacity: 0; cursor: pointer;
+    background: var(--delete-bg); color: #fff; border: 2px solid rgba(255,255,255,0.4);
+    border-radius: 50%; font-size: 14px; line-height: 18px; text-align: center;
+    cursor: pointer; opacity: 0; transition: opacity 0.15s; z-index: 20; pointer-events: none;
   }
-  .item.selected .delete-btn { opacity: 1; pointer-events: all; }
-
-  /* Furniture sprites */
-  .green-couch { background-image: url('sprites/green-couch.png'); width:120px; height:120px; }
-  .dark-purple-couch { background-image: url('sprites/dark-purple-couch.png'); width:120px; height:120px; }
-  .pink-couch { background-image: url('sprites/pink-couch.png'); width:120px; height:120px; }
-  .purple-couch { background-image: url('sprites/purple-couch.png'); width:120px; height:120px; }
-  .red-couch { background-image: url('sprites/red-couch.png'); width:120px; height:120px; }
-  .purple-wingback-chair { background-image: url('sprites/purple-wingback-chair.png'); width:100px; height:110px; }
-  .yellow-chair { background-image: url('sprites/yellow-chair.png'); width:100px; height:110px; }
-  .potted-plant { background-image: url('sprites/potted-plant.png'); width:80px; height:80px; }
-  .pink-potted-plant { background-image: url('sprites/pink-potted-plant.png'); width:80px; height:80px; }
-  .purple-plant-stand { background-image: url('sprites/purple-plant-stand.png'); width:80px; height:80px; }
-  .lake-art { background-image: url('sprites/lake-art.png'); width:100px; height:100px; }
-  .macrame-art { background-image: url('sprites/macrame-art.png'); width:100px; height:100px; }
-  .meadow-art { background-image: url('sprites/meadow-art.png'); width:100px; height:100px; }
-  .mirror-art { background-image: url('sprites/mirror-art.png'); width:100px; height:100px; }
-  .wood-floor-shelves { background-image: url('sprites/wood-floor-shelves.png'); width:120px; height:100px; }
-  .purple-rug { background-image: url('sprites/purple-rug.png'); width:120px; height:60px; }
-  .vertical-rug { background-image: url('sprites/vertical-rug.png'); width:60px; height:120px; }
+  .item .resize-handle {
+    position: absolute; bottom: -10px; right: -10px; width: 20px; height: 20px;
+    background: var(--accent); border: 2px solid rgba(255,255,255,0.5); border-radius: 50%;
+    cursor: se-resize; opacity: 0; transition: opacity 0.15s; z-index: 20; pointer-events: none;
+  }
+  .item .rotate-handle {
+    position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+    width: 20px; height: 20px; background: #ffd166; border: 2px solid rgba(255,255,255,0.6);
+    border-radius: 50%; cursor: grab; opacity: 0; transition: opacity 0.15s; z-index: 20;
+    pointer-events: none; font-size: 10px; display: flex; align-items: center; justify-content: center;
+  }
+  .item.selected { filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.45)) drop-shadow(0 0 8px rgba(142,197,214,0.7)); }
+  .item.selected .delete-btn, .item.selected .resize-handle, .item.selected .rotate-handle { opacity: 1; pointer-events: all; }
 
   /* Characters - Human always on top */
+  #characters { position: absolute; inset: 0; pointer-events: none; z-index: 500; }
+
   .character {
     position: absolute; background-size: contain; background-repeat: no-repeat;
-    pointer-events: none; filter: drop-shadow(3px 5px 8px rgba(0,0,0,0.4));
+    pointer-events: none; filter: drop-shadow(3px 5px 8px rgba(0,0,0,0.5));
     transition: left 2.6s ease-in-out, top 2.6s ease-in-out;
   }
-  #human { 
-    width: 68px; 
-    height: 95px; 
-    background-image: url('sprites/human.png');   /* idle face forward */
-    z-index: 50;   /* HIGH - always on top of everything */
-  }
-  #cat1, #cat2 { 
-    width: 52px; 
-    height: 42px; 
-    background-image: url('sprites/cat-sit.png'); 
-    z-index: 20;   /* cats can go behind furniture */
-  }
-
-  /* Walking states */
+  #human { width: 68px; height: 95px; background-image: url('sprites/human.png'); z-index: 501; }
   #human.walking  { background-image: url('sprites/human-walk.png'); }
   #human.walking2 { background-image: url('sprites/human-walk-2.png'); }
 
+  #cat1, #cat2 { width: 52px; height: 42px; background-image: url('sprites/cat-sit.png'); z-index: 20; }
   #cat1.walking, #cat2.walking { background-image: url('sprites/cat-walk.png'); }
   #cat1.laying, #cat2.laying   { background-image: url('sprites/cat-lay.png'); }
 
   .mood-particle {
     position: absolute; font-size: 20px; pointer-events: none;
-    animation: moodFloat 2.5s ease-out forwards; z-index: 60;
+    animation: moodFloat 2.5s ease-out forwards; z-index: 600;
   }
   @keyframes moodFloat { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-90px); opacity: 0; } }
 </style>
@@ -101,7 +114,13 @@
 
 <button id="toggleSidebar" class="ui-btn">☰</button>
 <button id="musicBtn" class="ui-btn">🎶</button>
-<button id="saveBtn" class="ui-btn">📸</button>
+<button id="saveBtn" class="ui-btn">📸 Save PNG</button>
+
+<div id="happiness-bar">
+  🌿 Vibe
+  <div id="happiness-fill"><div id="happiness-fill-inner" style="width:30%"></div></div>
+  <span id="happiness-label">chill</span>
+</div>
 
 <audio id="bgMusic" src="audio/boho-bg.mp3" loop></audio>
 
@@ -109,24 +128,64 @@
   <div id="sidebar-header">
     <h2>Boho Life</h2>
     <div id="color-row">
-      <input type="color" id="wallPicker" value="#4a5d6a">
+      <input type="color" id="wallPicker" value="#4a5d6a" title="Wall color">
       <span>Wall Color</span>
     </div>
   </div>
   <div id="sidebar-body">
     <h3>Room</h3>
-    <button class="spawn-btn" onclick="saveRoom()">💾 Save</button>
-    <button class="spawn-btn" onclick="loadRoom()">📂 Load</button>
-    <button class="spawn-btn" onclick="clearRoom()">🧹 Clear</button>
+    <button class="spawn-btn" onclick="saveRoom()">💾 Save Room</button>
+    <button class="spawn-btn" onclick="loadRoom()">📂 Load Room</button>
+    <button class="spawn-btn" onclick="clearRoom()">🧹 Clear All</button>
 
-    <h3>Furniture</h3>
+    <h3>Couches & Chairs</h3>
     <button class="spawn-btn" data-type="green-couch" data-zone="floor">Green Couch</button>
-    <button class="spawn-btn" data-type="purple-couch" data-zone="floor">Purple Couch</button>
+    <button class="spawn-btn" data-type="dark-purple-couch" data-zone="floor">Dark Purple Couch</button>
     <button class="spawn-btn" data-type="pink-couch" data-zone="floor">Pink Couch</button>
+    <button class="spawn-btn" data-type="purple-couch" data-zone="floor">Purple Couch</button>
+    <button class="spawn-btn" data-type="red-couch" data-zone="floor">Red Couch</button>
+    <button class="spawn-btn" data-type="purple-wingback-chair" data-zone="floor">Purple Wingback</button>
+    <button class="spawn-btn" data-type="yellow-chair" data-zone="floor">Yellow Chair</button>
+
+    <h3>Pillows & Poufs</h3>
+    <button class="spawn-btn" data-type="floor-pillow" data-zone="floor">Floor Pillow</button>
+    <button class="spawn-btn" data-type="floor-pillows" data-zone="floor">Floor Pillows</button>
+    <button class="spawn-btn" data-type="purple-floor-pillows" data-zone="floor">Purple Pillows</button>
+    <button class="spawn-btn" data-type="pouf-stack-pillows" data-zone="floor">Pouf Stack</button>
+
+    <h3>Blankets</h3>
+    <button class="spawn-btn" data-type="stool-blanket-stack" data-zone="floor">Stool Stack</button>
+    <button class="spawn-btn" data-type="basket-blanket-stack" data-zone="floor">Basket Stack</button>
+    <button class="spawn-btn" data-type="stacked-blankets" data-zone="floor">Stacked Blankets</button>
+
+    <h3>Plants</h3>
     <button class="spawn-btn" data-type="potted-plant" data-zone="floor">Plant</button>
     <button class="spawn-btn" data-type="pink-potted-plant" data-zone="floor">Pink Plant</button>
-    <button class="spawn-btn" data-type="wood-floor-shelves" data-zone="floor">Shelves</button>
+    <button class="spawn-btn" data-type="purple-plant-stand" data-zone="floor">Plant Stand</button>
+
+    <h3>Wall Art</h3>
+    <button class="spawn-btn" data-type="lake-art" data-zone="wall">Lake Art</button>
+    <button class="spawn-btn" data-type="macrame-art" data-zone="wall">Macramé</button>
+    <button class="spawn-btn" data-type="meadow-art" data-zone="wall">Meadow</button>
+    <button class="spawn-btn" data-type="mirror-art" data-zone="wall">Mirror</button>
+    <button class="spawn-btn" data-type="mountain-art" data-zone="wall">Mountain</button>
+    <button class="spawn-btn" data-type="tapestry-art" data-zone="wall">Tapestry</button>
+    <button class="spawn-btn" data-type="horizontal-tapestry-art" data-zone="wall">Horiz. Tapestry</button>
+    <button class="spawn-btn" data-type="wall-shelf-art" data-zone="wall">Wall Shelf</button>
+
+    <h3>Lighting</h3>
+    <button class="spawn-btn" data-type="ceiling-light" data-zone="ceiling">Ceiling Light</button>
+
+    <h3>Shelves & Storage</h3>
+    <button class="spawn-btn" data-type="wood-floor-shelves" data-zone="floor">Wood Shelves</button>
+    <button class="spawn-btn" data-type="blue-curio" data-zone="floor">Blue Curio</button>
+    <button class="spawn-btn" data-type="light-purple-curio" data-zone="floor">Light Purple Curio</button>
+    <button class="spawn-btn" data-type="pink-curio" data-zone="floor">Pink Curio</button>
+
+    <h3>Rugs & Accents</h3>
     <button class="spawn-btn" data-type="purple-rug" data-zone="floor">Purple Rug</button>
+    <button class="spawn-btn" data-type="vertical-rug" data-zone="floor">Vertical Rug</button>
+    <button class="spawn-btn" data-type="amethyst-wand" data-zone="floor">Amethyst Wand</button>
   </div>
 </aside>
 
@@ -134,19 +193,23 @@
   <div class="wall" id="wall"></div>
   <div class="floor"></div>
   <div id="items"></div>
-  <div id="human" class="character"></div>
-  <div id="cat1" class="character"></div>
-  <div id="cat2" class="character"></div>
+  <div id="characters">
+    <div id="human" class="character"></div>
+    <div id="cat1" class="character"></div>
+    <div id="cat2" class="character"></div>
+  </div>
 </div>
 
 <script>
-let zTop = 10;
+let zTop = 11;
 const wall = document.getElementById('wall');
 const picker = document.getElementById('wallPicker');
 const itemsEl = document.getElementById('items');
 const human = document.getElementById('human');
 const cat1 = document.getElementById('cat1');
 const cat2 = document.getElementById('cat2');
+
+const ZONE_TOP = { floor: '65%', wall: '20%', ceiling: '5%' };
 
 picker.addEventListener('input', e => wall.style.background = e.target.value);
 document.getElementById('toggleSidebar').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('closed'));
@@ -155,62 +218,158 @@ document.querySelectorAll('.spawn-btn[data-type]').forEach(btn => {
   btn.addEventListener('click', () => spawnItem(btn.dataset.type, btn.dataset.zone));
 });
 
-function spawnItem(type, zone) {
+document.querySelector('.room').addEventListener('pointerdown', e => {
+  if (['wall','floor','room'].some(c => e.target.classList.contains(c))) deselectAll();
+});
+
+function deselectAll() { document.querySelectorAll('.item.selected').forEach(el => el.classList.remove('selected')); }
+function selectItem(el) { deselectAll(); el.classList.add('selected'); }
+
+function bringToFront(el) {
+  zTop = Math.min(499, zTop + 1);
+  el.style.zIndex = zTop;
+}
+
+function applyTransform(el) {
+  const angle = parseFloat(el.dataset.rotation) || 0;
+  const flipped = el.dataset.flipped === 'true';
+  el.style.transform = `scaleX(${flipped ? -1 : 1}) rotate(${angle}deg)`;
+}
+
+function spawnItem(type, zone, opts = {}) {
   const el = document.createElement('div');
   el.classList.add('item', type);
-  el.style.left = '140px';
-  el.style.top = zone === 'floor' ? '65%' : '20%';
+  el.style.top = opts.top || ZONE_TOP[zone] || '50%';
+  el.style.left = opts.left || '140px';
+  if (opts.width) el.style.width = opts.width;
+  if (opts.height) el.style.height = opts.height;
+  el.dataset.rotation = opts.rotation || 0;
+  el.dataset.flipped = opts.flipped || 'false';
+  applyTransform(el);
+  bringToFront(el);
+
   const del = document.createElement('button'); del.className = 'delete-btn'; del.textContent = '×';
-  del.onclick = (e) => { e.stopPropagation(); el.remove(); updateHappiness(); };
+  del.addEventListener('click', e => { e.stopPropagation(); el.remove(); updateHappiness(); });
   el.appendChild(del);
+
+  const resize = document.createElement('div'); resize.className = 'resize-handle'; el.appendChild(resize);
+  const rotate = document.createElement('div'); rotate.className = 'rotate-handle'; rotate.textContent = '↻'; el.appendChild(rotate);
+
   itemsEl.appendChild(el);
   makeDraggable(el);
+  makeResizable(el, resize);
+  makeRotatable(el, rotate);
+  selectItem(el);
   updateHappiness();
+  return el;
 }
 
 function makeDraggable(el) {
-  let dragging = false, startX, startY, startLeft, startTop;
+  let startX, startY, startLeft, startTop, dragging = false, moved = false, lastTap = 0;
   el.addEventListener('pointerdown', e => {
-    if (e.target.tagName === 'BUTTON') return;
-    dragging = true;
+    if (e.target.classList.contains('delete-btn') || e.target.classList.contains('resize-handle') || e.target.classList.contains('rotate-handle')) return;
+    dragging = true; moved = false;
     startX = e.clientX; startY = e.clientY;
-    const r = el.getBoundingClientRect();
-    startLeft = r.left; startTop = r.top;
-    el.style.zIndex = ++zTop;
+    const rect = el.getBoundingClientRect();
+    startLeft = rect.left; startTop = rect.top;
+    el.setPointerCapture(e.pointerId);
+    bringToFront(el);
   });
   el.addEventListener('pointermove', e => {
     if (!dragging) return;
+    moved = true;
     el.style.left = (startLeft + e.clientX - startX) + 'px';
     el.style.top  = (startTop + e.clientY - startY) + 'px';
   });
-  el.addEventListener('pointerup', () => { dragging = false; updateHappiness(); });
+  el.addEventListener('pointerup', () => {
+    if (!moved) {
+      const now = Date.now();
+      if (now - lastTap < 300) {
+        el.dataset.flipped = (el.dataset.flipped === 'true') ? 'false' : 'true';
+        applyTransform(el);
+      }
+      lastTap = now;
+    }
+    dragging = false;
+    updateHappiness();
+  });
 }
 
-// Life Sim - Human always on top
-let happiness = 50;
+function makeResizable(el, handle) {
+  handle.addEventListener('pointerdown', e => {
+    e.stopPropagation();
+    const sx = e.clientX, sy = e.clientY, sw = el.offsetWidth, sh = el.offsetHeight;
+    handle.setPointerCapture(e.pointerId);
+    const onMove = ev => {
+      el.style.width = Math.max(30, sw + ev.clientX - sx) + 'px';
+      el.style.height = Math.max(30, sh + ev.clientY - sy) + 'px';
+    };
+    const onUp = () => {
+      handle.removeEventListener('pointermove', onMove);
+      handle.removeEventListener('pointerup', onUp);
+    };
+    handle.addEventListener('pointermove', onMove);
+    handle.addEventListener('pointerup', onUp);
+  });
+}
+
+function makeRotatable(el, handle) {
+  handle.addEventListener('pointerdown', e => {
+    e.stopPropagation();
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    handle.setPointerCapture(e.pointerId);
+    const onMove = ev => {
+      const angle = Math.atan2(ev.clientY - cy, ev.clientX - cx) * (180 / Math.PI) + 90;
+      el.dataset.rotation = angle;
+      applyTransform(el);
+    };
+    const onUp = () => {
+      handle.removeEventListener('pointermove', onMove);
+      handle.removeEventListener('pointerup', onUp);
+    };
+    handle.addEventListener('pointermove', onMove);
+    handle.addEventListener('pointerup', onUp);
+  });
+}
+
+// Life Sim
+let happiness = 30;
+
+function updateHappiness() {
+  const count = document.querySelectorAll('.item').length;
+  happiness = Math.min(100, 20 + count * 7);
+  document.getElementById('happiness-fill-inner').style.width = happiness + '%';
+  const label = happiness > 85 ? '✨ thriving' : happiness > 60 ? '🌸 cozy' : happiness > 35 ? '🌿 chill' : '😴 sparse';
+  document.getElementById('happiness-label').textContent = label;
+  if (Math.random() > 0.4) moveCharacters();
+}
 
 function moveCharacters() {
-  // Human - always walks in front
-  human.style.transition = 'left 2.8s ease-in-out, top 2.8s ease-in-out';
-  human.style.left = (Math.random() * 60 + 20) + '%';
-  human.style.top  = (Math.random() * 30 + 48) + '%';
+  // Human always on top
+  const hLeft = window.innerWidth * (0.15 + Math.random() * 0.7);
+  const hTop  = window.innerHeight * 0.68;
+  human.style.left = hLeft + 'px';
+  human.style.top  = hTop + 'px';
 
   human.classList.add('walking');
   setTimeout(() => { human.classList.remove('walking'); human.classList.add('walking2'); }, 900);
   setTimeout(() => human.classList.remove('walking2'), 1900);
 
-  // Cats (can go behind furniture)
+  // Cats
   [cat1, cat2].forEach((cat, i) => {
-    cat.style.transition = 'left 2.1s ease-in-out, top 2.1s ease-in-out';
-    cat.style.left = (Math.random() * 65 + 15) + '%';
-    cat.style.top  = (Math.random() * 35 + 50) + '%';
+    const cLeft = window.innerWidth * (0.12 + Math.random() * 0.72);
+    const cTop  = window.innerHeight * (0.68 + Math.random() * 0.15);
+    cat.style.left = cLeft + 'px';
+    cat.style.top  = cTop + 'px';
 
     cat.classList.add('walking');
     setTimeout(() => {
       cat.classList.remove('walking');
       cat.classList.add('laying');
     }, 1400 + i * 250);
-    setTimeout(() => cat.classList.remove('laying'), 3000);
+    setTimeout(() => cat.classList.remove('laying'), 3800);
   });
 
   showMood();
@@ -229,24 +388,7 @@ function showMood() {
   }
 }
 
-function updateHappiness() {
-  let score = 30 + document.querySelectorAll('.item').length * 6;
-  happiness = Math.min(100, score);
-  if (Math.random() > 0.35) moveCharacters();
-}
-
-// Initial placement
-setTimeout(() => {
-  human.style.left = '38%'; human.style.top = '52%';
-  cat1.style.left = '52%';  cat1.style.top = '65%';
-  cat2.style.left = '68%';  cat2.style.top = '60%';
-  moveCharacters();
-}, 600);
-
-// Gentle idle movement
-setInterval(() => { if (Math.random() > 0.4) moveCharacters(); }, 12000);
-
-// Save / Load / Clear / Screenshot
+// Save / Load / Clear
 function saveRoom() {
   const data = { wall: wall.style.background, items: [] };
   document.querySelectorAll('.item').forEach(el => {
@@ -258,7 +400,7 @@ function saveRoom() {
 
 function loadRoom() {
   const saved = localStorage.getItem('bohoLife');
-  if (!saved) return;
+  if (!saved) return alert('No saved room');
   const data = JSON.parse(saved);
   itemsEl.innerHTML = '';
   wall.style.background = data.wall || '#4a5d6a';
@@ -284,6 +426,19 @@ document.getElementById('musicBtn').onclick = () => {
   const m = document.getElementById('bgMusic');
   m.paused ? m.play() : m.pause();
 };
+
+// Initial
+setTimeout(() => {
+  human.style.left = (window.innerWidth * 0.38) + 'px';
+  human.style.top  = (window.innerHeight * 0.72) + 'px';
+  cat1.style.left  = (window.innerWidth * 0.52) + 'px';
+  cat1.style.top   = (window.innerHeight * 0.76) + 'px';
+  cat2.style.left  = (window.innerWidth * 0.68) + 'px';
+  cat2.style.top   = (window.innerHeight * 0.73) + 'px';
+  updateHappiness();
+}, 600);
+
+setInterval(() => { if (Math.random() > 0.4) moveCharacters(); }, 12000);
 </script>
 </body>
 </html>
